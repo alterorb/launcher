@@ -1,11 +1,15 @@
 package net.alterorb.launcher;
 
+import com.bulenkov.darcula.DarculaLaf;
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Moshi;
 import lombok.extern.log4j.Log4j2;
 import net.alterorb.launcher.ProgressListenableSource.ProgressListener;
 import net.alterorb.launcher.alterorb.AlterorbGame;
 import net.alterorb.launcher.ui.ProgressBarView;
+import net.alterorb.launcher.ui.UIConstants;
+import net.alterorb.launcher.ui.UIConstants.Colors;
+import net.alterorb.launcher.ui.UIConstants.Fonts;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Request.Builder;
@@ -16,13 +20,21 @@ import okio.BufferedSource;
 import okio.HashingSink;
 import okio.Okio;
 
+import javax.swing.UIManager;
+import javax.swing.plaf.FontUIResource;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.FontFormatException;
+import java.awt.GraphicsEnvironment;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Objects;
 
@@ -193,7 +205,51 @@ public class Launcher {
         progressBarView.dispose();
     }
 
+    private static void registerFont(InputStream stream) {
+        try {
+            Font font = Font.createFont(Font.TRUETYPE_FONT, stream);
+            GraphicsEnvironment environment = GraphicsEnvironment.getLocalGraphicsEnvironment();
+
+            environment.registerFont(font);
+        } catch (FontFormatException | IOException e) {
+            LOGGER.error("Failed to register font", e);
+        }
+    }
+
+    private static void setDefaultFont(FontUIResource font) {
+        Enumeration keys = UIManager.getDefaults().keys();
+
+        while (keys.hasMoreElements()) {
+            Object key = keys.nextElement();
+            Object value = UIManager.get(key);
+
+            if (value instanceof FontUIResource) {
+                UIManager.put(key, font);
+            }
+        }
+    }
+
     public static void main(String[] args) {
+        UIManager.getFont("Label.font"); // Fixes darcula NPE when on linux, https://github.com/bulenkov/iconloader/issues/14
+        UIManager.put("ToolTip.background", Colors.DARCULA);
+
+        try {
+            UIManager.setLookAndFeel(new DarculaLaf());
+        } catch (Exception e) {
+            LOGGER.warn("Failed to load darcula, falling back to system's look and feel.");
+            try {
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            } catch (Exception ex) {
+                // Cannot happen
+            }
+        }
+        Class<Launcher> clazz = Launcher.class;
+
+        registerFont(clazz.getResourceAsStream("/fonts/opensans.ttf"));
+        registerFont(clazz.getResourceAsStream("/fonts/opensans-bold.ttf"));
+
+        setDefaultFont(new FontUIResource(Fonts.OPEN_SANS_13));
+
         new Launcher().launch();
     }
 }

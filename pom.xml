@@ -18,7 +18,19 @@
         <log4j2.version>2.11.1</log4j2.version>
     </properties>
 
+    <repositories>
+        <repository>
+            <id>nexus-hexrealm</id>
+            <url>https://nexus.hexrealm.com/content/repositories/public-repositories/</url>
+        </repository>
+    </repositories>
+
     <dependencies>
+        <dependency>
+            <groupId>com.bulenkov</groupId>
+            <artifactId>darcula</artifactId>
+            <version>1.1</version>
+        </dependency>
         <dependency>
             <groupId>org.ow2.asm</groupId>
             <artifactId>asm-tree</artifactId>
