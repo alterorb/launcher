@@ -6,6 +6,7 @@ import com.squareup.moshi.Moshi;
 import lombok.extern.log4j.Log4j2;
 import net.alterorb.launcher.ProgressListenableSource.ProgressListener;
 import net.alterorb.launcher.alterorb.AlterorbGame;
+import net.alterorb.launcher.ui.LauncherView;
 import net.alterorb.launcher.ui.ProgressBarView;
 import net.alterorb.launcher.ui.UIConstants;
 import net.alterorb.launcher.ui.UIConstants.Colors;
@@ -250,6 +251,7 @@ public class Launcher {
 
         setDefaultFont(new FontUIResource(Fonts.OPEN_SANS_13));
 
-        new Launcher().launch();
+//        new Launcher().launch();
+        new LauncherView().setVisible(true);
     }
 }
