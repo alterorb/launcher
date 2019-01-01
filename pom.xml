@@ -5,10 +5,10 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>net.alterorb</groupId>
-    <artifactId>orbdefence-launcher</artifactId>
+    <artifactId>alterorb-launcher</artifactId>
     <version>1.0-SNAPSHOT</version>
 
-    <name>orbdefence-launcher</name>
+    <name>alterorb-launcher</name>
     <url>https://alterorb.net</url>
 
     <properties>
