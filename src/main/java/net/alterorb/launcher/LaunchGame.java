@@ -2,9 +2,14 @@ package net.alterorb.launcher;
 
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Moshi;
+import com.squareup.moshi.adapters.PolymorphicJsonAdapterFactory;
 import lombok.extern.log4j.Log4j2;
 import net.alterorb.launcher.alterorb.AlterorbGameConfig;
 import net.alterorb.launcher.applet.AlterorbAppletStub;
+import net.alterorb.launcher.patcher.Patch;
+import net.alterorb.launcher.patcher.PatcherClassLoader;
+import net.alterorb.launcher.patcher.impl.CheckhostPatch;
+import net.alterorb.launcher.patcher.impl.MouseInputPatch;
 import net.alterorb.launcher.ui.GameFrameView;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -21,7 +26,11 @@ import java.util.jar.JarFile;
 @Log4j2
 public class LaunchGame {
 
-    private static final JsonAdapter<AlterorbGameConfig> GAME_CONFIG_JSON_ADAPTER = new Moshi.Builder().build().adapter(AlterorbGameConfig.class);
+    private static final JsonAdapter<AlterorbGameConfig> GAME_CONFIG_JSON_ADAPTER = new Moshi.Builder()
+            .add(PolymorphicJsonAdapterFactory.of(Patch.class, "type")
+                                              .withSubtype(CheckhostPatch.class, "checkhost")
+                                              .withSubtype(MouseInputPatch.class, "mouseinput"))
+            .build().adapter(AlterorbGameConfig.class);
     private static final String BASE_GAME_CONFIG_URL = "https://launcher.alterorb.net/configs/";
     private final StorageManager storageManager = new StorageManager();
     private final OkHttpClient okHttpClient = new OkHttpClient();
@@ -61,7 +70,7 @@ public class LaunchGame {
         File gamepackFile = storageManager.getGamepackPath(gameName).toFile();
 
         JarFile jarFile = new JarFile(gamepackFile);
-        PatcherClassLoader classLoader = new PatcherClassLoader(jarFile, gameConfig.getGameshellClass(), gameConfig.getCheckhostMethod(), gameConfig.getCheckhostMethodDesc());
+        PatcherClassLoader classLoader = new PatcherClassLoader(jarFile, gameConfig.getPatches());
         Class<?> mainClass = classLoader.loadClass(gameConfig.getMainClass());
         Applet applet = (Applet) mainClass.newInstance();
 
