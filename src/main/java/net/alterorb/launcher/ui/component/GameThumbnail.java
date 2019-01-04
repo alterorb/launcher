@@ -1,7 +1,10 @@
 package net.alterorb.launcher.ui.component;
 
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
 import net.alterorb.launcher.alterorb.AlterorbGame;
+import net.alterorb.launcher.ui.LauncherView;
 import net.alterorb.launcher.ui.UIConstants.Colors;
 import net.alterorb.launcher.ui.UIConstants.Fonts;
 
@@ -26,22 +29,29 @@ public class GameThumbnail extends JComponent {
     private static final int MAX_GAME_TITLE_WIDTH = 95;
     private static final int MINIMUM_WIDTH = 105;
     private static final int MINIMUM_HEIGHT = 115;
-    private BufferedImage thumbnail;
-    private String gameName;
+
+    @Getter
+    private final AlterorbGame alterorbGame;
+
+    @Getter
     private boolean selected;
     private boolean hovered;
+    private BufferedImage thumbnail;
 
     public GameThumbnail(AlterorbGame alterorbGame) {
-
+        this.alterorbGame = alterorbGame;
         try {
             thumbnail = ImageIO.read(GameThumbnail.class.getResource("/thumbnails/orbdefence.jpg"));
         } catch (IOException e) {
             LOGGER.catching(e);
         }
-        String[] names = {"Armies of Gielinor", "Dr P. Saves the Earth", "The Track Controller", "Zombie Dawn Multi", "Arcanists", "Orb Defence", "Wizard Run"};
-        gameName = names[(int) (Math.random() * names.length)];
         setPreferredSize(new Dimension(MINIMUM_WIDTH, MINIMUM_HEIGHT));
         addMouseListener(new MouseHoverListener());
+    }
+
+    public void setSelected(boolean selected) {
+        this.selected = selected;
+        repaint();
     }
 
     @Override
@@ -52,11 +62,11 @@ public class GameThumbnail extends JComponent {
         Color backgroundColor;
 
         if (selected) {
-            backgroundColor = Colors.TEXT_SUCCESS;
+            backgroundColor = Colors.DARCULA;
         } else if (hovered) {
             backgroundColor = Colors.DARCULA_HOVERED;
         } else {
-            backgroundColor = Colors.DARCULA;
+            backgroundColor = Colors.DARCULA_DARKENED_ALTERNATIVE;
         }
         g.setColor(backgroundColor);
         g.fillRect(0, 0, getWidth(), getHeight());
@@ -64,7 +74,7 @@ public class GameThumbnail extends JComponent {
 
         g.setFont(Fonts.OPEN_SANS_13);
         g.setColor(Colors.TEXT_DEFAULT);
-        drawGameTitle(g, gameName);
+        drawGameTitle(g, alterorbGame.getName());
     }
 
     private void drawGameTitle(Graphics g, String title) {

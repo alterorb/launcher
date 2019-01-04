@@ -27,6 +27,12 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.google.inject</groupId>
+            <artifactId>guice</artifactId>
+            <version>4.2.2</version>
+            <classifier>no_aop</classifier>
+        </dependency>
+        <dependency>
             <groupId>com.bulenkov</groupId>
             <artifactId>darcula</artifactId>
             <version>1.1</version>
