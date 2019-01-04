@@ -5,10 +5,10 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>net.alterorb</groupId>
-    <artifactId>orbdefence-launcher</artifactId>
+    <artifactId>alterorb-launcher</artifactId>
     <version>1.0-SNAPSHOT</version>
 
-    <name>orbdefence-launcher</name>
+    <name>alterorb-launcher</name>
     <url>https://alterorb.net</url>
 
     <properties>
@@ -18,7 +18,25 @@
         <log4j2.version>2.11.1</log4j2.version>
     </properties>
 
+    <repositories>
+        <repository>
+            <id>nexus-hexrealm</id>
+            <url>https://nexus.hexrealm.com/content/repositories/public-repositories/</url>
+        </repository>
+    </repositories>
+
     <dependencies>
+        <dependency>
+            <groupId>com.google.inject</groupId>
+            <artifactId>guice</artifactId>
+            <version>4.2.2</version>
+            <classifier>no_aop</classifier>
+        </dependency>
+        <dependency>
+            <groupId>com.bulenkov</groupId>
+            <artifactId>darcula</artifactId>
+            <version>1.1</version>
+        </dependency>
         <dependency>
             <groupId>org.ow2.asm</groupId>
             <artifactId>asm-tree</artifactId>

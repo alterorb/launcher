@@ -2,11 +2,13 @@ package net.alterorb.launcher;
 
 import net.alterorb.launcher.alterorb.AlterorbGame;
 
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+@Singleton
 public class StorageManager {
 
     private static final Path BASE_DIRECTORY = Paths.get(System.getProperty("user.home"), ".alterorb");
