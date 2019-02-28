@@ -41,7 +41,7 @@ public class GameThumbnail extends JComponent {
     public GameThumbnail(AlterorbGame alterorbGame) {
         this.alterorbGame = alterorbGame;
         try {
-            thumbnail = ImageIO.read(GameThumbnail.class.getResource("/thumbnails/orbdefence.jpg"));
+            thumbnail = ImageIO.read(GameThumbnail.class.getResource("/thumbnails/" + alterorbGame.getInternalName() + ".jpg"));
         } catch (IOException e) {
             LOGGER.catching(e);
         }
