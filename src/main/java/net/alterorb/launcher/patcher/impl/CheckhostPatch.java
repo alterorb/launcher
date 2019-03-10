@@ -2,8 +2,6 @@ package net.alterorb.launcher.patcher.impl;
 
 import lombok.extern.log4j.Log4j2;
 import net.alterorb.launcher.patcher.Patch;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.InsnList;
@@ -29,9 +27,7 @@ public class CheckhostPatch implements Patch {
 
     @Override
     public byte[] apply(byte[] classData) {
-        ClassReader reader = new ClassReader(classData);
-        ClassNode classNode = new ClassNode();
-        reader.accept(classNode, ClassReader.SKIP_DEBUG);
+        ClassNode classNode = byteArrayToClassNode(classData);
 
         for (MethodNode methodNode : classNode.methods) {
 
@@ -46,9 +42,6 @@ public class CheckhostPatch implements Patch {
                 break;
             }
         }
-        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-        classNode.accept(writer);
-
-        return writer.toByteArray();
+        return classNodeToByteArray(classNode);
     }
 }

@@ -29,9 +29,7 @@ public class MouseInputPatch implements Patch {
 
     @Override
     public byte[] apply(byte[] classData) {
-        ClassReader reader = new ClassReader(classData);
-        ClassNode classNode = new ClassNode();
-        reader.accept(classNode, ClassReader.SKIP_DEBUG);
+        ClassNode classNode = byteArrayToClassNode(classData);
 
         for (MethodNode methodNode : classNode.methods) {
 
@@ -57,9 +55,6 @@ public class MouseInputPatch implements Patch {
                 break;
             }
         }
-        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-        classNode.accept(writer);
-
-        return writer.toByteArray();
+        return classNodeToByteArray(classNode);
     }
 }

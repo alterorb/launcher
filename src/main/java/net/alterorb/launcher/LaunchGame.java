@@ -9,6 +9,7 @@ import net.alterorb.launcher.applet.AlterorbAppletStub;
 import net.alterorb.launcher.patcher.Patch;
 import net.alterorb.launcher.patcher.PatcherClassLoader;
 import net.alterorb.launcher.patcher.impl.CheckhostPatch;
+import net.alterorb.launcher.patcher.impl.LoginPublicKeyPatch;
 import net.alterorb.launcher.patcher.impl.MouseInputPatch;
 import net.alterorb.launcher.ui.GameFrameView;
 import okhttp3.OkHttpClient;
@@ -29,7 +30,8 @@ public class LaunchGame {
     private static final JsonAdapter<AlterorbGameConfig> GAME_CONFIG_JSON_ADAPTER = new Moshi.Builder()
             .add(PolymorphicJsonAdapterFactory.of(Patch.class, "type")
                                               .withSubtype(CheckhostPatch.class, "checkhost")
-                                              .withSubtype(MouseInputPatch.class, "mouseinput"))
+                                              .withSubtype(MouseInputPatch.class, "mouseinput")
+                                              .withSubtype(LoginPublicKeyPatch.class, "loginpubkey"))
             .build().adapter(AlterorbGameConfig.class);
     private static final String BASE_GAME_CONFIG_URL = "https://launcher.alterorb.net/configs/";
     private final StorageManager storageManager = new StorageManager();
