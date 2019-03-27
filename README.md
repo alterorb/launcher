@@ -16,6 +16,7 @@ To compile simply run maven with the `package` goal. After compiling a folder ca
 * Orb Defence
 * Crazy Crystals (requires a complete local cache at the moment)
 * Miner Disturbance
+* Escape Vector (requires a complete local cache at the moment)
 
 #### Limitations
 

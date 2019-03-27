@@ -60,7 +60,7 @@ public class DownloadGamepackTask implements Runnable {
                                             .execute();
 
             if (!response.isSuccessful()) {
-                throw new RuntimeException("Failed to fetch gamepack");
+                throw new IOException("Failed to fetch gamepack");
             }
 
             try (ResponseBody responseBody = response.body()) {
