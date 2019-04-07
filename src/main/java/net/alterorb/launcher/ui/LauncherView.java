@@ -29,6 +29,8 @@ import java.util.List;
 @Singleton
 public class LauncherView extends JFrame {
 
+    private static final int GAME_LIST_CONTAINER_WIDTH = 400;
+
     private final JButton launchButton = new JButton("Launch");
     private final JProgressBar progressBar = new JProgressBar();
     private final JLabel progressBarText = new JLabel();
@@ -51,7 +53,7 @@ public class LauncherView extends JFrame {
 
         gameListContainer.setLayout(new BorderLayout());
         gameListContainer.setBackground(Colors.DARCULA_DARKENED);
-        gameListContainer.setPreferredSize(new Dimension(400, 290));
+        gameListContainer.setPreferredSize(new Dimension(GAME_LIST_CONTAINER_WIDTH, 290));
         gameListContainer.add(placeholderText, BorderLayout.CENTER);
 
         JScrollPane scrollPane = new JScrollPane(gameListContainer);
@@ -78,14 +80,6 @@ public class LauncherView extends JFrame {
         launchButton.setToolTipText("Select a game from the list first before launching it");
         launchButton.addActionListener(controller::launch);
         add(launchButton);
-    }
-
-    public void hideProgressBar() {
-        progressBar.setVisible(false);
-    }
-
-    public void hideProgressBarText() {
-        progressBarText.setVisible(false);
     }
 
     public void updateProgressBar(int percentage) {
@@ -116,6 +110,7 @@ public class LauncherView extends JFrame {
                 gameListContainer.add(gameThumbnail);
                 gameThumbnails.add(gameThumbnail);
             }
+            gameListContainer.setPreferredSize(new Dimension(GAME_LIST_CONTAINER_WIDTH, 115 * (games.size() / 3)));
             gameListContainer.revalidate();
             gameListContainer.repaint();
         });

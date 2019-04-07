@@ -42,7 +42,7 @@ public class GameThumbnail extends JComponent {
         this.alterorbGame = alterorbGame;
         try {
             thumbnail = ImageIO.read(GameThumbnail.class.getResource("/thumbnails/" + alterorbGame.getInternalName() + ".jpg"));
-        } catch (IOException e) {
+        } catch (IOException | IllegalArgumentException e) {
             LOGGER.catching(e);
         }
         setPreferredSize(new Dimension(MINIMUM_WIDTH, MINIMUM_HEIGHT));
