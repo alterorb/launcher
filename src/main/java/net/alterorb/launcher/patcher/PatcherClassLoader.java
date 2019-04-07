@@ -24,7 +24,9 @@ public class PatcherClassLoader extends ClassLoader {
             String entryName = entry.getName();
 
             if (entryName.endsWith(".class")) {
-                String className = entryName.substring(0, entryName.indexOf('.')).trim();
+                String className = entryName.substring(0, entryName.indexOf('.'))
+                                            .replace('/', '.')
+                                            .trim();
 
                 try (DataInputStream in = new DataInputStream(jar.getInputStream(entry))) {
                     byte[] data = new byte[in.available()];
