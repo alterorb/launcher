@@ -13,10 +13,32 @@ To compile simply run maven with the `package` goal. After compiling a folder ca
 
 #### Supported Games
 
-* Orb Defence
-* Crazy Crystals (requires a complete local cache at the moment)
+* Thirty-Six Card Trick
+* Ace of Skies
+* Bouncedown
+* Confined
+* Crazy Crystals
+* Dr Phlogiston Saves the Earth
+* Escape Vector
+* Flea Circus
+* Geoblox
+* Hold the Line
+* Hostile Spawn
+* Lexicominos
 * Miner Disturbance
-* Escape Vector (requires a complete local cache at the moment)
+* Monkey Puzzle 2
+* Orb Defence
+* Sol-Knight
+* StarCannon
+* Stellar Shard
+* Sumoblitz
+* TerraPhoenix
+* Tor Challenge
+* Torquing!
+* The Track Controller
+* Transmogrify
+* Wizard Run
+* Zombie Dawn
 
 #### Limitations
 
