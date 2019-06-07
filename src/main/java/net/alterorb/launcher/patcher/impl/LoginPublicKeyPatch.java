@@ -48,9 +48,11 @@ public class LoginPublicKeyPatch implements Patch {
 
                         if (Objects.equals(fieldInsnNode.name, publicKeyModulusField) || Objects.equals(fieldInsnNode.name, publicKeyExponentField)) {
                             // removes calls to the string decryptor methods
-                            instructions.remove(fieldInsnNode.getPrevious());
-                            instructions.remove(fieldInsnNode.getPrevious());
-                            LdcInsnNode ldcInsnNode = (LdcInsnNode) fieldInsnNode.getPrevious();
+                            AbstractInsnNode bigIntegerConstructorCall = fieldInsnNode.getPrevious();
+
+                            instructions.remove(bigIntegerConstructorCall.getPrevious());
+                            instructions.remove(bigIntegerConstructorCall.getPrevious());
+                            LdcInsnNode ldcInsnNode = (LdcInsnNode) bigIntegerConstructorCall.getPrevious();
 
                             ldcInsnNode.cst = Objects.equals(fieldInsnNode.name, publicKeyModulusField) ? publicKeyModulus : publicKeyExponent;
                         }
