@@ -9,7 +9,6 @@ import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 
-import java.math.BigInteger;
 import java.util.ListIterator;
 import java.util.Objects;
 
@@ -20,11 +19,11 @@ public class LoginPublicKeyPatch implements Patch {
 
     private String publicKeyModulusClass;
     private String publicKeyModulusField;
-    private BigInteger publicKeyModulus;
+    private String publicKeyModulus;
 
     private String publicKeyExponentClass;
     private String publicKeyExponentField;
-    private BigInteger publicKeyExponent;
+    private String publicKeyExponent;
 
     @Override
     public boolean applicable(String className) {

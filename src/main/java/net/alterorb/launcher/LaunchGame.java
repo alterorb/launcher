@@ -28,7 +28,6 @@ import java.util.jar.JarFile;
 public class LaunchGame {
 
     private static final JsonAdapter<AlterorbGameConfig> GAME_CONFIG_JSON_ADAPTER = new Moshi.Builder()
-            .add(new BigIntegerAdapter())
             .add(PolymorphicJsonAdapterFactory.of(Patch.class, "type")
                                               .withSubtype(CheckhostPatch.class, "checkhost")
                                               .withSubtype(MouseInputPatch.class, "mouseinput")
