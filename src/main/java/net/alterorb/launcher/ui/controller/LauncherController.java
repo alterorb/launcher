@@ -36,6 +36,7 @@ public class LauncherController {
     }
 
     public void launch(ActionEvent e) {
+        launcherView.disableLaunchButton();
         executorService.submit(validateGamepackTask);
     }
 }

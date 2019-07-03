@@ -82,6 +82,10 @@ public class LauncherView extends JFrame {
         add(launchButton);
     }
 
+    public void disableLaunchButton() {
+        launchButton.setEnabled(false);
+    }
+
     public void updateProgressBar(int percentage) {
 
         if (!progressBar.isVisible()) {
