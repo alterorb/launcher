@@ -33,7 +33,7 @@ public class LaunchGame {
                                               .withSubtype(MouseInputPatch.class, "mouseinput")
                                               .withSubtype(LoginPublicKeyPatch.class, "loginpubkey"))
             .build().adapter(AlterorbGameConfig.class);
-    private static final String BASE_GAME_CONFIG_URL = "https://launcher.alterorb.net/configs/";
+    private static final String BASE_GAME_CONFIG_URL = "https://static.alterorb.net/launcher/configs/";
     private final StorageManager storageManager = new StorageManager();
     private final OkHttpClient okHttpClient = new OkHttpClient();
     private final String gameName;
