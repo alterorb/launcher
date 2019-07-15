@@ -19,7 +19,7 @@ public class LauncherModule extends AbstractModule {
         HashMap<String, String> properties = new HashMap<>();
 
         properties.put("baseUrl", "https://static.alterorb.net/launcher/");
-        properties.put("version", "1.6");
+        properties.put("version", "1.7");
 
         Names.bindProperties(binder(), properties);
     }
