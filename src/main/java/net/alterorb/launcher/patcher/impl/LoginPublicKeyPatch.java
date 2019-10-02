@@ -33,6 +33,7 @@ public class LoginPublicKeyPatch implements Patch {
     @Override
     public byte[] apply(byte[] classData) {
         ClassNode classNode = byteArrayToClassNode(classData);
+        String targetField = Objects.equals(classNode.name, publicKeyModulusClass) ? publicKeyModulusField : publicKeyExponentField;
 
         for (MethodNode method : classNode.methods) {
 
@@ -46,7 +47,7 @@ public class LoginPublicKeyPatch implements Patch {
                     if (abstractInsn.getOpcode() == Opcodes.PUTSTATIC) {
                         FieldInsnNode fieldInsnNode = (FieldInsnNode) abstractInsn;
 
-                        if (Objects.equals(fieldInsnNode.name, publicKeyModulusField) || Objects.equals(fieldInsnNode.name, publicKeyExponentField)) {
+                        if (Objects.equals(fieldInsnNode.name, targetField)) {
                             // removes calls to the string decryptor methods
                             AbstractInsnNode bigIntegerConstructorCall = fieldInsnNode.getPrevious();
 
