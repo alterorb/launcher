@@ -11,10 +11,12 @@ import org.objectweb.asm.tree.MethodNode;
 
 import java.util.ListIterator;
 import java.util.Objects;
+import lombok.extern.log4j.Log4j2;
 
 /**
  * Replaces the public key used in the login process.
  */
+@Log4j2
 public class LoginPublicKeyPatch implements Patch {
 
     private String publicKeyModulusClass;
@@ -52,9 +54,13 @@ public class LoginPublicKeyPatch implements Patch {
 
                             instructions.remove(bigIntegerConstructorCall.getPrevious());
                             instructions.remove(bigIntegerConstructorCall.getPrevious());
-                            LdcInsnNode ldcInsnNode = (LdcInsnNode) bigIntegerConstructorCall.getPrevious();
+                            try {
+                                LdcInsnNode ldcInsnNode = (LdcInsnNode) bigIntegerConstructorCall.getPrevious();
 
-                            ldcInsnNode.cst = Objects.equals(fieldInsnNode.name, publicKeyModulusField) ? publicKeyModulus : publicKeyExponent;
+                                ldcInsnNode.cst = Objects.equals(fieldInsnNode.name, publicKeyModulusField) ? publicKeyModulus : publicKeyExponent;
+                            } catch (ClassCastException ex) {
+                                LOGGER.catching(ex);
+                            }
                         }
                     }
                 }
