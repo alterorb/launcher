@@ -55,7 +55,11 @@ public class LoginPublicKeyPatch implements Patch {
                             instructions.remove(bigIntegerConstructorCall.getPrevious());
                             LdcInsnNode ldcInsnNode = (LdcInsnNode) bigIntegerConstructorCall.getPrevious();
 
-                            ldcInsnNode.cst = Objects.equals(fieldInsnNode.name, publicKeyModulusField) ? publicKeyModulus : publicKeyExponent;
+                            if (Objects.equals(publicKeyModulusClass, publicKeyExponentClass)) {
+                                ldcInsnNode.cst = Objects.equals(fieldInsnNode.name, publicKeyModulusField) ? publicKeyModulus : publicKeyExponent;
+                            } else {
+                                ldcInsnNode.cst = Objects.equals(classNode.name, publicKeyModulusClass) ? publicKeyModulus : publicKeyExponent;
+                            }
                         }
                     }
                 }
