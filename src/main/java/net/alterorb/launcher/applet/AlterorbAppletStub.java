@@ -17,8 +17,12 @@ public class AlterorbAppletStub implements AppletStub {
 
     public AlterorbAppletStub(AlterorbGameConfig gameConfig) throws MalformedURLException {
         this.parameters = gameConfig.getParameters();
-        this.documentBase = new URL(gameConfig.getBaseUrl());
-        this.codeBase = new URL(gameConfig.getBaseUrl());
+
+        String sysDocumentBase = System.getenv("DOCUMENT_BASE");
+        String sysCodeBase = System.getenv("CODE_BASE");
+
+        this.documentBase = new URL(sysDocumentBase != null ? sysDocumentBase : gameConfig.getBaseUrl());
+        this.codeBase = new URL(sysCodeBase != null ? sysCodeBase : gameConfig.getBaseUrl());
     }
 
     @Override
