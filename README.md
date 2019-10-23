@@ -42,11 +42,8 @@ To compile simply run maven with the `package` goal. After compiling a folder ca
 
 #### Limitations
 
-* No login
-* No highscores
-* Games are limited to the free to play content available to them
+##### As of 23/10/2019 all the games except Crazy Crystals, Escape Vector, Hold the Line and Torquing! support login with free membership, highscores and persistent achievements.
 
 #### Other Resources
 
-* [Roadmap (Trello)](https://trello.com/b/asiFcjZG/alterorb)
 * We have an IRC channel (#alterorb) on [rizon.net](https://www.rizon.net/)
