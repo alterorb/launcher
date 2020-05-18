@@ -1,6 +1,6 @@
 package net.alterorb.launcher.patcher.impl;
 
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import net.alterorb.launcher.patcher.Patch;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
@@ -13,7 +13,7 @@ import java.util.Objects;
 /**
  * Patches the gameshell's checkhost method so it accepts any domain instead of restricting to localhost/jagex domains.
  */
-@Log4j2
+@Slf4j
 public class CheckhostPatch implements Patch {
 
     private String gameshellClass;

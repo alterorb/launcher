@@ -1,75 +1,259 @@
 package net.alterorb.launcher;
 
-import com.bulenkov.darcula.DarculaLaf;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import lombok.extern.log4j.Log4j2;
-import net.alterorb.launcher.task.CheckVersionTask;
-import net.alterorb.launcher.ui.UIConstants.Colors;
-import net.alterorb.launcher.ui.UIConstants.Fonts;
+import com.pivovarit.function.ThrowingConsumer;
+import com.pivovarit.function.ThrowingFunction;
+import com.pivovarit.function.ThrowingSupplier;
+import com.squareup.moshi.JsonAdapter;
+import com.squareup.moshi.Moshi;
+import com.squareup.moshi.Types;
+import com.squareup.moshi.adapters.PolymorphicJsonAdapterFactory;
+import lombok.extern.slf4j.Slf4j;
+import net.alterorb.launcher.ProgressListenableSource.ProgressListener;
+import net.alterorb.launcher.alterorb.AlterorbGame;
+import net.alterorb.launcher.alterorb.AlterorbGameConfig;
+import net.alterorb.launcher.applet.AlterorbAppletContext;
+import net.alterorb.launcher.applet.AlterorbAppletStub;
+import net.alterorb.launcher.patcher.Patch;
+import net.alterorb.launcher.patcher.PatcherClassLoader;
+import net.alterorb.launcher.patcher.impl.CheckhostPatch;
+import net.alterorb.launcher.patcher.impl.LoginPublicKeyPatch;
+import net.alterorb.launcher.patcher.impl.MouseInputPatch;
+import net.alterorb.launcher.ui.GameFrameController;
+import net.alterorb.launcher.ui.LauncherController;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Request.Builder;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
+import okio.BufferedSink;
+import okio.BufferedSource;
+import okio.HashingSink;
+import okio.Okio;
 
-import javax.swing.UIManager;
-import javax.swing.plaf.FontUIResource;
-import java.awt.Font;
-import java.awt.FontFormatException;
-import java.awt.GraphicsEnvironment;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import java.applet.Applet;
+import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.Enumeration;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.jar.JarFile;
 
-@Log4j2
+@Slf4j
+@Singleton
 public class Launcher {
 
-    private static void registerFont(InputStream stream) {
-        try {
-            Font font = Font.createFont(Font.TRUETYPE_FONT, stream);
-            GraphicsEnvironment environment = GraphicsEnvironment.getLocalGraphicsEnvironment();
+    public static final String BASE_URL = "https://static.alterorb.net/launcher/";
+    public static final String VERSION = "2.0";
 
-            environment.registerFont(font);
-        } catch (FontFormatException | IOException e) {
-            LOGGER.error("Failed to register font", e);
-        }
+    private static final String BASE_GAME_CONFIG_URL = "https://static.alterorb.net/launcher/configs/";
+    private static final JsonAdapter<AlterorbGameConfig> GAME_CONFIG_JSON_ADAPTER = new Moshi.Builder()
+            .add(PolymorphicJsonAdapterFactory.of(Patch.class, "type")
+                                              .withSubtype(CheckhostPatch.class, "checkhost")
+                                              .withSubtype(MouseInputPatch.class, "mouseinput")
+                                              .withSubtype(LoginPublicKeyPatch.class, "loginpubkey"))
+            .build().adapter(AlterorbGameConfig.class);
+
+    private final DiscordIntegration discordIntegration;
+    private final GameFrameController gameFrameController;
+    private final LauncherController launcherController;
+    private final OkHttpClient okHttpClient;
+    private final Storage storage;
+    private final Moshi moshi;
+
+    private Applet applet;
+
+    @Inject
+    public Launcher(DiscordIntegration discordIntegration, GameFrameController gameFrameController, LauncherController launcherController, OkHttpClient okHttpClient, Storage storage, Moshi moshi) {
+        this.discordIntegration = discordIntegration;
+        this.gameFrameController = gameFrameController;
+        this.launcherController = launcherController;
+        this.okHttpClient = okHttpClient;
+        this.storage = storage;
+        this.moshi = moshi;
     }
 
-    private static void setDefaultFont(FontUIResource font) {
-        Enumeration keys = UIManager.getDefaults().keys();
-
-        while (keys.hasMoreElements()) {
-            Object key = keys.nextElement();
-            Object value = UIManager.get(key);
-
-            if (value instanceof FontUIResource) {
-                UIManager.put(key, font);
-            }
-        }
-    }
-
-    public static void main(String[] args) throws IOException {
-        UIManager.put("ToolTip.background", Colors.DARCULA_DARKENED_ALTERNATIVE);
-        UIManager.put("ToolTip.foreground", Colors.TEXT_DEFAULT);
+    public void initialize() {
+        LOGGER.info("Initializing AlterOrb Launcher V{}", VERSION);
+        launcherController.hideProgressBarAndText();
 
         try {
-            UIManager.setLookAndFeel(new DarculaLaf());
+            storage.initializeDirectories();
+        } catch (IOException e) {
+            LOGGER.error("Failed to create directories", e);
+        }
+        CompletableFuture.runAsync(discordIntegration::initialize);
+        CompletableFuture.supplyAsync(ThrowingSupplier.sneaky(this::fetchGameList))
+                         .thenAcceptAsync(launcherController::updateAvailableGames)
+                         .exceptionally(this::handleError);
+    }
+
+    public void shutdown() {
+        LOGGER.debug("Shutting down the launcher...");
+        launcherController.dispose();
+        gameFrameController.dispose();
+        okHttpClient.dispatcher().executorService().shutdown();
+        okHttpClient.connectionPool().evictAll();
+
+        if (applet != null) {
+            LOGGER.debug("Stopping the applet...");
+            applet.stop();
+        }
+        discordIntegration.shutdown();
+        LOGGER.debug("Finished shutting down the launcher");
+    }
+
+    public void launchGame(AlterorbGame alterorbGame) {
+
+        if (alterorbGame == null) {
+            LOGGER.warn("Launching null game?");
+            return;
+        }
+        try {
+            launcherController.setProgressBarMessage("Launching the game...");
+            CompletableFuture.supplyAsync(() -> alterorbGame)
+                             .thenApplyAsync(ThrowingFunction.sneaky(this::validateGamepack))
+                             .thenAcceptAsync(ThrowingConsumer.sneaky(this::launch))
+                             .thenAccept(v -> discordIntegration.updateRichPresence(alterorbGame))
+                             .thenAccept(v -> launcherController.dispose())
+                             .exceptionally(this::handleError);
         } catch (Exception e) {
-            LOGGER.warn("Failed to load darcula, falling back to system's look and feel.");
-            try {
-                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            } catch (Exception ex) {
-                // Cannot happen
+            handleError(e);
+        }
+    }
+
+    private Void handleError(Throwable e) {
+        LOGGER.error("Encountered an error while executing async task", e);
+        return null;
+    }
+
+    private List<AlterorbGame> fetchGameList() throws IOException {
+        LOGGER.debug("Fetching game list...");
+        Request request = new Builder()
+                .url(Launcher.BASE_URL + "available-games.json")
+                .build();
+
+        Response response = okHttpClient.newCall(request)
+                                        .execute();
+
+        if (!response.isSuccessful()) {
+            throw new RuntimeException("Failed to fetch game list");
+        }
+        try (ResponseBody responseBody = response.body()) {
+
+            if (responseBody == null) {
+                throw new IOException("Empty response body");
+            }
+
+            JsonAdapter<List<AlterorbGame>> jsonAdapter = moshi.adapter(Types.newParameterizedType(List.class, AlterorbGame.class));
+
+            return jsonAdapter.fromJson(responseBody.source());
+        }
+    }
+
+    private AlterorbGame validateGamepack(AlterorbGame alterorbGame) throws IOException {
+        LOGGER.debug("Validating the gamepack for game={}", alterorbGame.getInternalName());
+        Path gamepackPath = storage.getGamepackPath(alterorbGame);
+
+        if (!Files.exists(gamepackPath)) {
+            LOGGER.info("Gamepack does not exist, game={}", alterorbGame.getInternalName());
+            downloadGamepack(alterorbGame);
+            return alterorbGame;
+        }
+
+        try (HashingSink hashingSink = HashingSink.sha256(Okio.blackhole());
+                BufferedSource source = Okio.buffer(Okio.source(gamepackPath))) {
+            source.readAll(hashingSink);
+
+            String localSha256 = hashingSink.hash().hex();
+            String expectedSha256 = alterorbGame.getGamepackHash();
+
+            LOGGER.debug("Gamepack hash, local={}, expected={}", localSha256, expectedSha256);
+
+            if (!Objects.equals(localSha256, expectedSha256)) {
+                LOGGER.info("Gamepack hash miss match, game={}", alterorbGame.getInternalName());
+                downloadGamepack(alterorbGame);
             }
         }
-        Class<Launcher> clazz = Launcher.class;
+        return alterorbGame;
+    }
 
-        registerFont(clazz.getResourceAsStream("/fonts/opensans.ttf"));
-        registerFont(clazz.getResourceAsStream("/fonts/opensans-bold.ttf"));
+    private void downloadGamepack(AlterorbGame alterorbGame) throws IOException {
+        Request request = new Builder()
+                .url(Launcher.BASE_URL + "gamepacks/" + alterorbGame.getInternalName() + ".jar")
+                .build();
 
-        setDefaultFont(new FontUIResource(Fonts.OPEN_SANS_13));
+        Response response = okHttpClient.newCall(request)
+                                        .execute();
 
-        Injector injector = Guice.createInjector(new LauncherModule());
-        StorageManager storageManager = injector.getInstance(StorageManager.class);
-        storageManager.initializeDirectories();
+        if (!response.isSuccessful()) {
+            throw new IOException("Failed to download gamepack");
+        }
 
-        CheckVersionTask checkVersionTask = injector.getInstance(CheckVersionTask.class);
-        checkVersionTask.run();
+        try (ResponseBody responseBody = response.body()) {
+
+            if (responseBody == null) {
+                throw new IOException("Empty response body");
+            }
+            Path gamepackPath = storage.getGamepackPath(alterorbGame);
+            ProgressListener progressListener = (bytesRead, length, done) -> {
+                long percentage = bytesRead * 100 / length;
+                percentage = Math.min(100, Math.max(0, percentage));
+                launcherController.updateProgressBar((int) percentage);
+            };
+            launcherController.setProgressBarMessage("Downloading gamepack...");
+
+            try (BufferedSink sink = Okio.buffer(Okio.sink(gamepackPath));
+                    ProgressListenableSource source = new ProgressListenableSource(responseBody.source(), responseBody.contentLength(), progressListener)) {
+                sink.writeAll(source);
+            }
+        }
+    }
+
+    private AlterorbGameConfig fetchGameConfig(AlterorbGame alterorbGame) throws IOException {
+        LOGGER.debug("Fetching config for game={}", alterorbGame.getInternalName());
+        Request request = new Builder()
+                .url(BASE_GAME_CONFIG_URL + alterorbGame.getInternalName() + ".json")
+                .build();
+
+        Response response = okHttpClient.newCall(request)
+                                        .execute();
+
+        if (!response.isSuccessful()) {
+            throw new IOException("Failed to fetch game config, likely unsupported game");
+        }
+        try (ResponseBody body = response.body()) {
+
+            if (body == null) {
+                throw new IOException("Response body is null");
+            }
+            return GAME_CONFIG_JSON_ADAPTER.fromJson(body.source());
+        }
+    }
+
+    private void launch(AlterorbGame alterorbGame) throws Exception {
+        LOGGER.debug("Launching game={}", alterorbGame.getInternalName());
+        AlterorbGameConfig gameConfig = fetchGameConfig(alterorbGame);
+        File gamepackFile = storage.getGamepackPath(alterorbGame.getInternalName()).toFile();
+
+        JarFile jarFile = new JarFile(gamepackFile);
+        PatcherClassLoader classLoader = new PatcherClassLoader(jarFile, gameConfig.getPatches());
+        Class<?> mainClass = classLoader.loadClass(gameConfig.getMainClass());
+        applet = (Applet) mainClass.getConstructor().newInstance();
+
+        AlterorbAppletContext appletContext = new AlterorbAppletContext(this);
+        AlterorbAppletStub alterorbAppletStub = new AlterorbAppletStub(gameConfig, appletContext);
+        applet.setStub(alterorbAppletStub);
+
+        LOGGER.debug("Initializing the applet...");
+        applet.init();
+        applet.start();
+        LOGGER.debug("Applet initialized, displaying the game view...");
+        gameFrameController.addApplet(applet);
+        gameFrameController.display();
+        LOGGER.debug("Finished launching the game");
     }
 }

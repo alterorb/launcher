@@ -1,6 +1,6 @@
 package net.alterorb.launcher.patcher;
 
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-@Log4j2
+@Slf4j
 public class PatcherClassLoader extends ClassLoader {
 
     private final Map<String, byte[]> classData = new HashMap<>();
@@ -41,8 +41,7 @@ public class PatcherClassLoader extends ClassLoader {
                     }
                     this.classData.put(className, data);
                 } catch (IOException e) {
-                    LOGGER.error("Failed to read jar entry {}", entryName);
-                    LOGGER.catching(e);
+                    LOGGER.error("Failed to read jar entry", e);
                 }
             }
         }
@@ -54,12 +53,12 @@ public class PatcherClassLoader extends ClassLoader {
 
         if (clazz != null) {
             return clazz;
-        } else if (!classData.containsKey(name)) {
-            return super.loadClass(name);
-        } else {
+        } else if (classData.containsKey(name)) {
             byte[] data = classData.remove(name);
 
             return defineClass(name, data, 0, data.length);
+        } else {
+            return super.loadClass(name);
         }
     }
 }

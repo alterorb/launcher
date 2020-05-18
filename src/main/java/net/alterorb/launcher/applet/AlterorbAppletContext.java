@@ -1,5 +1,8 @@
 package net.alterorb.launcher.applet;
 
+import lombok.extern.slf4j.Slf4j;
+import net.alterorb.launcher.Launcher;
+
 import java.applet.Applet;
 import java.applet.AppletContext;
 import java.applet.AudioClip;
@@ -8,8 +11,18 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.Objects;
 
+@Slf4j
 public class AlterorbAppletContext implements AppletContext {
+
+    private static final String QUIT_APPLET_PATH = "/quit.ws";
+
+    private final Launcher launcher;
+
+    public AlterorbAppletContext(Launcher launcher) {
+        this.launcher = launcher;
+    }
 
     @Override
     public AudioClip getAudioClip(URL url) {
@@ -38,7 +51,11 @@ public class AlterorbAppletContext implements AppletContext {
 
     @Override
     public void showDocument(URL url, String target) {
-        throw new UnsupportedOperationException("Unsupported operation");
+
+        if (url != null && Objects.equals(url.getPath(), QUIT_APPLET_PATH)) {
+            LOGGER.trace("Applet requested shutdown");
+            launcher.shutdown();
+        }
     }
 
     @Override

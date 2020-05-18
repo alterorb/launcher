@@ -10,19 +10,20 @@ import java.util.Map;
 
 public class AlterorbAppletStub implements AppletStub {
 
-    private static final AlterorbAppletContext APPLET_CONTEXT = new AlterorbAppletContext();
+    private final AlterorbAppletContext context;
     private final Map<String, String> parameters;
     private final URL documentBase;
     private final URL codeBase;
 
-    public AlterorbAppletStub(AlterorbGameConfig gameConfig) throws MalformedURLException {
+    public AlterorbAppletStub(AlterorbGameConfig gameConfig, AlterorbAppletContext context) throws MalformedURLException {
+        this.context = context;
         this.parameters = gameConfig.getParameters();
 
-        String sysDocumentBase = System.getenv("DOCUMENT_BASE");
-        String sysCodeBase = System.getenv("CODE_BASE");
+        String envDocumentBase = System.getenv("DOCUMENT_BASE");
+        String envCodeBase = System.getenv("CODE_BASE");
 
-        this.documentBase = new URL(sysDocumentBase != null ? sysDocumentBase : gameConfig.getBaseUrl());
-        this.codeBase = new URL(sysCodeBase != null ? sysCodeBase : gameConfig.getBaseUrl());
+        this.documentBase = new URL(envDocumentBase != null ? envDocumentBase : gameConfig.getBaseUrl());
+        this.codeBase = new URL(envCodeBase != null ? envCodeBase : gameConfig.getBaseUrl());
     }
 
     @Override
@@ -47,7 +48,7 @@ public class AlterorbAppletStub implements AppletStub {
 
     @Override
     public AppletContext getAppletContext() {
-        return APPLET_CONTEXT;
+        return context;
     }
 
     @Override
