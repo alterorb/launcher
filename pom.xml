@@ -21,7 +21,7 @@
         <moshi.version>1.8.0</moshi.version>
         <okhttp.version>3.14.2</okhttp.version>
         <okio.version>2.2.2</okio.version>
-        <log4j2.version>2.11.2</log4j2.version>
+        <log4j2.version>2.13.3</log4j2.version>
         <lombok.version>1.18.8</lombok.version>
     </properties>
 
