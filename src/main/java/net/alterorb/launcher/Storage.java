@@ -2,6 +2,7 @@ package net.alterorb.launcher;
 
 import net.alterorb.launcher.alterorb.AlterorbGame;
 
+import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -9,10 +10,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 @Singleton
-public class StorageManager {
+public class Storage {
 
     private static final Path BASE_DIRECTORY = Paths.get(System.getProperty("user.home"), ".alterorb");
     private static final Path GAMEPACKS_DIRECTORY = BASE_DIRECTORY.resolve("gamepacks");
+
+    @Inject
+    public Storage() {
+    }
 
     public void initializeDirectories() throws IOException {
 
@@ -23,10 +28,6 @@ public class StorageManager {
         if (!Files.exists(GAMEPACKS_DIRECTORY)) {
             Files.createDirectories(GAMEPACKS_DIRECTORY);
         }
-    }
-
-    public boolean gamepackExists(AlterorbGame alterorbGame) {
-        return Files.exists(getGamepackPath(alterorbGame));
     }
 
     public boolean gamepackExists(String alterorbGameName) {

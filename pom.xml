@@ -6,7 +6,7 @@
 
     <groupId>net.alterorb</groupId>
     <artifactId>alterorb-launcher</artifactId>
-    <version>1.9</version>
+    <version>2.0</version>
 
     <name>alterorb-launcher</name>
     <url>https://alterorb.net</url>
@@ -15,34 +15,49 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <guice.version>4.2.2</guice.version>
-        <darcula.version>1.1</darcula.version>
-        <asm.version>7.1</asm.version>
-        <moshi.version>1.8.0</moshi.version>
-        <okhttp.version>3.14.2</okhttp.version>
-        <okio.version>2.2.2</okio.version>
-        <log4j2.version>2.11.2</log4j2.version>
-        <lombok.version>1.18.8</lombok.version>
+        <throwingfunc.version>1.5.1</throwingfunc.version>
+        <discordipc.version>0.4</discordipc.version>
+        <logback.version>1.2.3</logback.version>
+        <dagger.version>2.27</dagger.version>
+        <flatlaf.version>0.32</flatlaf.version>
+        <asm.version>8.0.1</asm.version>
+        <moshi.version>1.9.2</moshi.version>
+        <okhttp.version>3.14.9</okhttp.version>
+        <okio.version>1.17.5</okio.version>
+        <slf4j.version>1.7.30</slf4j.version>
+        <lombok.version>1.18.12</lombok.version>
     </properties>
-
-    <repositories>
-        <repository>
-            <id>nexus-hexrealm</id>
-            <url>https://nexus.hexrealm.com/content/repositories/public-repositories/</url>
-        </repository>
-    </repositories>
 
     <dependencies>
         <dependency>
-            <groupId>com.google.inject</groupId>
-            <artifactId>guice</artifactId>
-            <version>${guice.version}</version>
-            <classifier>no_aop</classifier>
+            <groupId>com.pivovarit</groupId>
+            <artifactId>throwing-function</artifactId>
+            <version>${throwingfunc.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.bulenkov</groupId>
-            <artifactId>darcula</artifactId>
-            <version>${darcula.version}</version>
+            <groupId>com.jagrosh</groupId>
+            <artifactId>DiscordIPC</artifactId>
+            <version>${discordipc.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-core</artifactId>
+            <version>${logback.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.dagger</groupId>
+            <artifactId>dagger</artifactId>
+            <version>${dagger.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.formdev</groupId>
+            <artifactId>flatlaf</artifactId>
+            <version>${flatlaf.version}</version>
         </dependency>
         <dependency>
             <groupId>org.ow2.asm</groupId>
@@ -70,14 +85,9 @@
             <version>${okio.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-api</artifactId>
-            <version>${log4j2.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-            <version>${log4j2.version}</version>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -101,6 +111,46 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>com.google.dagger</groupId>
+                            <artifactId>dagger-compiler</artifactId>
+                            <version>${dagger.version}</version>
+                        </path>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>3.1.0</version>
+                <configuration>
+                    <configLocation>checkstyle.xml</configLocation>
+                    <encoding>UTF-8</encoding>
+                    <consoleOutput>true</consoleOutput>
+                    <failsOnError>true</failsOnError>
+                    <linkXRef>false</linkXRef>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>validate</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
                 <version>3.2.1</version>
                 <executions>
@@ -111,11 +161,18 @@
                         </goals>
                         <configuration>
                             <finalName>alterorb-launcher</finalName>
-                            <shadedArtifactAttached>true</shadedArtifactAttached>
-                            <shadedClassifierName>FULL</shadedClassifierName>
+                            <minimizeJar>true</minimizeJar>
+                            <filters>
+                                <filter>
+                                    <artifact>com.formdev:*</artifact>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                </filter>
+                            </filters>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>net.alterorb.launcher.Launcher</mainClass>
+                                    <mainClass>net.alterorb.launcher.Bootstrap</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>
