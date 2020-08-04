@@ -28,6 +28,14 @@
         <lombok.version>1.18.12</lombok.version>
     </properties>
 
+    <repositories>
+        <repository>
+            <id>central</id>
+            <name>bintray</name>
+            <url>https://jcenter.bintray.com</url>
+        </repository>
+    </repositories>
+
     <dependencies>
         <dependency>
             <groupId>com.pivovarit</groupId>
