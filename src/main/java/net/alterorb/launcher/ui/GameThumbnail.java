@@ -2,7 +2,7 @@ package net.alterorb.launcher.ui;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import net.alterorb.launcher.alterorb.AlterorbGame;
+import net.alterorb.launcher.alterorb.AvailableGame;
 import net.alterorb.launcher.ui.UIConstants.Colors;
 import net.alterorb.launcher.ui.UIConstants.Fonts;
 
@@ -29,17 +29,17 @@ public class GameThumbnail extends JComponent {
     private static final int MINIMUM_HEIGHT = 115;
 
     @Getter
-    private final AlterorbGame alterorbGame;
+    private final AvailableGame availableGame;
 
     @Getter
     private boolean selected;
     private boolean hovered;
     private BufferedImage thumbnail;
 
-    public GameThumbnail(AlterorbGame alterorbGame) {
-        this.alterorbGame = alterorbGame;
+    public GameThumbnail(AvailableGame availableGame) {
+        this.availableGame = availableGame;
         try {
-            thumbnail = ImageIO.read(GameThumbnail.class.getResource("/thumbnails/" + alterorbGame.getInternalName() + ".jpg"));
+            thumbnail = ImageIO.read(GameThumbnail.class.getResource("/thumbnails/" + availableGame.getInternalName() + ".jpg"));
         } catch (IOException | IllegalArgumentException e) {
             LOGGER.error("Failed to load game thumbnail", e);
         }
@@ -70,7 +70,7 @@ public class GameThumbnail extends JComponent {
 
         g.setFont(Fonts.OPEN_SANS_13);
         g.setColor(Colors.TEXT_DEFAULT);
-        drawGameTitle(g, alterorbGame.getName());
+        drawGameTitle(g, availableGame.getName());
     }
 
     private void drawGameTitle(Graphics g, String title) {

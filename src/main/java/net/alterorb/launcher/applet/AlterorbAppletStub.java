@@ -1,6 +1,6 @@
 package net.alterorb.launcher.applet;
 
-import net.alterorb.launcher.alterorb.AlterorbGameConfig;
+import net.alterorb.launcher.alterorb.AlterorbGame;
 
 import java.applet.AppletContext;
 import java.applet.AppletStub;
@@ -15,7 +15,7 @@ public class AlterorbAppletStub implements AppletStub {
     private final URL documentBase;
     private final URL codeBase;
 
-    public AlterorbAppletStub(AlterorbGameConfig gameConfig, AlterorbAppletContext context) throws MalformedURLException {
+    public AlterorbAppletStub(AlterorbGame gameConfig, AlterorbAppletContext context) throws MalformedURLException {
         this.context = context;
         this.parameters = gameConfig.getParameters();
 

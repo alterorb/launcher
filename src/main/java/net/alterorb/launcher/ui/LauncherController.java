@@ -2,7 +2,7 @@ package net.alterorb.launcher.ui;
 
 import dagger.Lazy;
 import net.alterorb.launcher.Launcher;
-import net.alterorb.launcher.alterorb.AlterorbGame;
+import net.alterorb.launcher.alterorb.AvailableGame;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -54,12 +54,12 @@ public class LauncherController extends WindowAdapter {
         launcherView.hideProgressBarAndText();
     }
 
-    public void updateAvailableGames(List<AlterorbGame> games) {
+    public void updateAvailableGames(List<AvailableGame> games) {
         launcherView.updateGameList(games);
     }
 
     public void launch(ActionEvent e) {
-        launcher.get().launchGame(launcherViewModel.getSelectedGame());
+        launcher.get().launchGame(launcherViewModel.getSelectedGame().getInternalName());
         launcherView.disableLaunchButton();
     }
 }

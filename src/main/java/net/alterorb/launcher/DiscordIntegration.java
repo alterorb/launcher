@@ -8,6 +8,7 @@ import com.jagrosh.discordipc.entities.pipe.PipeStatus;
 import com.jagrosh.discordipc.exceptions.NoDiscordClientException;
 import lombok.extern.slf4j.Slf4j;
 import net.alterorb.launcher.alterorb.AlterorbGame;
+import net.alterorb.launcher.alterorb.AvailableGame;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -35,13 +36,13 @@ public class DiscordIntegration {
         }
     }
 
-    public void updateRichPresence(AlterorbGame alterorbGame) {
+    public void updateRichPresence(AlterorbGame availableGame) {
 
         if (client.getStatus() != PipeStatus.CONNECTED) {
             return;
         }
         RichPresence richPresence = new Builder()
-                .setDetails(alterorbGame.getName())
+                .setDetails(availableGame.getName())
                 .setStartTimestamp(OffsetDateTime.now())
                 .build();
 

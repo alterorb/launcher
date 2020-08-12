@@ -1,6 +1,5 @@
 package net.alterorb.launcher;
 
-import com.pivovarit.function.ThrowingConsumer;
 import com.pivovarit.function.ThrowingFunction;
 import com.pivovarit.function.ThrowingSupplier;
 import com.squareup.moshi.JsonAdapter;
@@ -10,7 +9,7 @@ import com.squareup.moshi.adapters.PolymorphicJsonAdapterFactory;
 import lombok.extern.slf4j.Slf4j;
 import net.alterorb.launcher.ProgressListenableSource.ProgressListener;
 import net.alterorb.launcher.alterorb.AlterorbGame;
-import net.alterorb.launcher.alterorb.AlterorbGameConfig;
+import net.alterorb.launcher.alterorb.AvailableGame;
 import net.alterorb.launcher.applet.AlterorbAppletContext;
 import net.alterorb.launcher.applet.AlterorbAppletStub;
 import net.alterorb.launcher.patcher.Patch;
@@ -20,6 +19,7 @@ import net.alterorb.launcher.patcher.impl.LoginPublicKeyPatch;
 import net.alterorb.launcher.patcher.impl.MouseInputPatch;
 import net.alterorb.launcher.ui.GameFrameController;
 import net.alterorb.launcher.ui.LauncherController;
+import net.alterorb.launcher.ui.UIConstants.Colors;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Request.Builder;
@@ -46,16 +46,16 @@ import java.util.jar.JarFile;
 @Singleton
 public class Launcher {
 
-    public static final String BASE_URL = "https://static.alterorb.net/launcher/";
+    public static final String BASE_URL = "https://static.alterorb.net/launcher/v2/";
     public static final String VERSION = "2.0";
 
-    private static final String BASE_GAME_CONFIG_URL = "https://static.alterorb.net/launcher/configs/";
-    private static final JsonAdapter<AlterorbGameConfig> GAME_CONFIG_JSON_ADAPTER = new Moshi.Builder()
+    private static final String BASE_GAME_CONFIG_URL = BASE_URL + "config/";
+    private static final JsonAdapter<AlterorbGame> GAME_CONFIG_JSON_ADAPTER = new Moshi.Builder()
             .add(PolymorphicJsonAdapterFactory.of(Patch.class, "type")
                                               .withSubtype(CheckhostPatch.class, "checkhost")
                                               .withSubtype(MouseInputPatch.class, "mouseinput")
                                               .withSubtype(LoginPublicKeyPatch.class, "loginpubkey"))
-            .build().adapter(AlterorbGameConfig.class);
+            .build().adapter(AlterorbGame.class);
 
     private final DiscordIntegration discordIntegration;
     private final GameFrameController gameFrameController;
@@ -106,18 +106,19 @@ public class Launcher {
         LOGGER.debug("Finished shutting down the launcher");
     }
 
-    public void launchGame(AlterorbGame alterorbGame) {
+    public void launchGame(String gameInternalName) {
 
-        if (alterorbGame == null) {
+        if (gameInternalName == null) {
             LOGGER.warn("Launching null game?");
             return;
         }
         try {
             launcherController.setProgressBarMessage("Launching the game...");
-            CompletableFuture.supplyAsync(() -> alterorbGame)
+            CompletableFuture.supplyAsync(() -> gameInternalName)
+                             .thenApplyAsync(ThrowingFunction.sneaky(this::fetchGameConfig))
                              .thenApplyAsync(ThrowingFunction.sneaky(this::validateGamepack))
-                             .thenAcceptAsync(ThrowingConsumer.sneaky(this::launch))
-                             .thenAccept(v -> discordIntegration.updateRichPresence(alterorbGame))
+                             .thenApplyAsync(ThrowingFunction.sneaky(this::launchApplet))
+                             .thenAccept(discordIntegration::updateRichPresence)
                              .thenAccept(v -> launcherController.dispose())
                              .exceptionally(this::handleError);
         } catch (Exception e) {
@@ -127,10 +128,11 @@ public class Launcher {
 
     private Void handleError(Throwable e) {
         LOGGER.error("Encountered an error while executing async task", e);
+        launcherController.setProgressBarMessage("There was an error while launching the game", Colors.TEXT_ERROR);
         return null;
     }
 
-    private List<AlterorbGame> fetchGameList() throws IOException {
+    private List<AvailableGame> fetchGameList() throws IOException {
         LOGGER.debug("Fetching game list...");
         Request request = new Builder()
                 .url(Launcher.BASE_URL + "available-games.json")
@@ -148,20 +150,20 @@ public class Launcher {
                 throw new IOException("Empty response body");
             }
 
-            JsonAdapter<List<AlterorbGame>> jsonAdapter = moshi.adapter(Types.newParameterizedType(List.class, AlterorbGame.class));
+            JsonAdapter<List<AvailableGame>> jsonAdapter = moshi.adapter(Types.newParameterizedType(List.class, AvailableGame.class));
 
             return jsonAdapter.fromJson(responseBody.source());
         }
     }
 
-    private AlterorbGame validateGamepack(AlterorbGame alterorbGame) throws IOException {
-        LOGGER.debug("Validating the gamepack for game={}", alterorbGame.getInternalName());
-        Path gamepackPath = storage.getGamepackPath(alterorbGame);
+    private AlterorbGame validateGamepack(AlterorbGame game) throws IOException {
+        LOGGER.debug("Validating the gamepack for game={}", game.getInternalName());
+        Path gamepackPath = storage.getGamepackPath(game);
 
         if (!Files.exists(gamepackPath)) {
-            LOGGER.info("Gamepack does not exist, game={}", alterorbGame.getInternalName());
-            downloadGamepack(alterorbGame);
-            return alterorbGame;
+            LOGGER.info("Gamepack does not exist, game={}", game.getInternalName());
+            downloadGamepack(game);
+            return game;
         }
 
         try (HashingSink hashingSink = HashingSink.sha256(Okio.blackhole());
@@ -169,21 +171,21 @@ public class Launcher {
             source.readAll(hashingSink);
 
             String localSha256 = hashingSink.hash().hex();
-            String expectedSha256 = alterorbGame.getGamepackHash();
+            String expectedSha256 = game.getGamepackHash();
 
             LOGGER.debug("Gamepack hash, local={}, expected={}", localSha256, expectedSha256);
 
             if (!Objects.equals(localSha256, expectedSha256)) {
-                LOGGER.info("Gamepack hash miss match, game={}", alterorbGame.getInternalName());
-                downloadGamepack(alterorbGame);
+                LOGGER.info("Gamepack hash miss match, game={}", game.getInternalName());
+                downloadGamepack(game);
             }
         }
-        return alterorbGame;
+        return game;
     }
 
-    private void downloadGamepack(AlterorbGame alterorbGame) throws IOException {
+    private void downloadGamepack(AlterorbGame game) throws IOException {
         Request request = new Builder()
-                .url(Launcher.BASE_URL + "gamepacks/" + alterorbGame.getInternalName() + ".jar")
+                .url(Launcher.BASE_URL + "gamepacks/" + game.getInternalName() + ".jar")
                 .build();
 
         Response response = okHttpClient.newCall(request)
@@ -198,7 +200,7 @@ public class Launcher {
             if (responseBody == null) {
                 throw new IOException("Empty response body");
             }
-            Path gamepackPath = storage.getGamepackPath(alterorbGame);
+            Path gamepackPath = storage.getGamepackPath(game);
             ProgressListener progressListener = (bytesRead, length, done) -> {
                 long percentage = bytesRead * 100 / length;
                 percentage = Math.min(100, Math.max(0, percentage));
@@ -213,10 +215,10 @@ public class Launcher {
         }
     }
 
-    private AlterorbGameConfig fetchGameConfig(AlterorbGame alterorbGame) throws IOException {
-        LOGGER.debug("Fetching config for game={}", alterorbGame.getInternalName());
+    private AlterorbGame fetchGameConfig(String internalName) throws IOException {
+        LOGGER.debug("Fetching config for game={}", internalName);
         Request request = new Builder()
-                .url(BASE_GAME_CONFIG_URL + alterorbGame.getInternalName() + ".json")
+                .url(BASE_GAME_CONFIG_URL + internalName + ".json")
                 .build();
 
         Response response = okHttpClient.newCall(request)
@@ -234,18 +236,17 @@ public class Launcher {
         }
     }
 
-    private void launch(AlterorbGame alterorbGame) throws Exception {
-        LOGGER.debug("Launching game={}", alterorbGame.getInternalName());
-        AlterorbGameConfig gameConfig = fetchGameConfig(alterorbGame);
-        File gamepackFile = storage.getGamepackPath(alterorbGame.getInternalName()).toFile();
+    private AlterorbGame launchApplet(AlterorbGame game) throws Exception {
+        LOGGER.debug("Launching game={}", game.getInternalName());
+        File gamepackFile = storage.getGamepackPath(game.getInternalName()).toFile();
 
         JarFile jarFile = new JarFile(gamepackFile);
-        PatcherClassLoader classLoader = new PatcherClassLoader(jarFile, gameConfig.getPatches());
-        Class<?> mainClass = classLoader.loadClass(gameConfig.getMainClass());
+        PatcherClassLoader classLoader = new PatcherClassLoader(jarFile, game.getPatches());
+        Class<?> mainClass = classLoader.loadClass(game.getMainClass());
         applet = (Applet) mainClass.getConstructor().newInstance();
 
         AlterorbAppletContext appletContext = new AlterorbAppletContext(this);
-        AlterorbAppletStub alterorbAppletStub = new AlterorbAppletStub(gameConfig, appletContext);
+        AlterorbAppletStub alterorbAppletStub = new AlterorbAppletStub(game, appletContext);
         applet.setStub(alterorbAppletStub);
 
         LOGGER.debug("Initializing the applet...");
@@ -255,5 +256,6 @@ public class Launcher {
         gameFrameController.addApplet(applet);
         gameFrameController.display();
         LOGGER.debug("Finished launching the game");
+        return game;
     }
 }

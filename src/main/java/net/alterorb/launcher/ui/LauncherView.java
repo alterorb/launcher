@@ -1,7 +1,7 @@
 package net.alterorb.launcher.ui;
 
 import lombok.RequiredArgsConstructor;
-import net.alterorb.launcher.alterorb.AlterorbGame;
+import net.alterorb.launcher.alterorb.AvailableGame;
 import net.alterorb.launcher.ui.UIConstants.Colors;
 import net.alterorb.launcher.ui.UIConstants.Fonts;
 
@@ -141,13 +141,13 @@ public class LauncherView extends JFrame {
         });
     }
 
-    void updateGameList(List<AlterorbGame> games) {
+    void updateGameList(List<AvailableGame> games) {
         SwingUtilities.invokeLater(() -> {
             gameListContainer.remove(placeholderText);
             gameListContainer.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 10));
             gameThumbnails = new ArrayList<>(games.size());
 
-            for (AlterorbGame game : games) {
+            for (AvailableGame game : games) {
                 GameThumbnail gameThumbnail = new GameThumbnail(game);
                 gameThumbnail.addMouseListener(new ThumbnailSelectionListener(gameThumbnail));
                 gameListContainer.add(gameThumbnail);
@@ -171,7 +171,7 @@ public class LauncherView extends JFrame {
             gameThumbnail.setSelected(selected);
 
             if (selected) {
-                model.setSelectedGame(gameThumbnail.getAlterorbGame());
+                model.setSelectedGame(gameThumbnail.getAvailableGame());
 
                 for (GameThumbnail thumbnail : gameThumbnails) {
 

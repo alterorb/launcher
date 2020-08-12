@@ -1,10 +1,10 @@
 package net.alterorb.launcher.ui;
 
 import lombok.Data;
-import net.alterorb.launcher.alterorb.AlterorbGame;
+import net.alterorb.launcher.alterorb.AvailableGame;
 
 @Data
 public class LauncherViewModel {
 
-    private AlterorbGame selectedGame;
+    private AvailableGame selectedGame;
 }
