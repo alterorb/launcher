@@ -1,6 +1,8 @@
 package net.alterorb.launcher;
 
 import com.formdev.flatlaf.FlatDarkLaf;
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
 import lombok.extern.slf4j.Slf4j;
 import net.alterorb.launcher.ui.LauncherController;
 import net.alterorb.launcher.ui.UIConstants.Colors;
@@ -24,6 +26,8 @@ public class Bootstrap {
         setupUiResources();
         LauncherComponent component = DaggerLauncherComponent.create();
         LauncherController launcherController = component.launcherController();
+
+        component.launcherConfig().load(args);
 
         launcherController.display();
         try {

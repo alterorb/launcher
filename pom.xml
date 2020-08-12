@@ -15,6 +15,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
+        <jopt.version>5.0.4</jopt.version>
         <throwingfunc.version>1.5.1</throwingfunc.version>
         <discordipc.version>0.4</discordipc.version>
         <logback.version>1.2.3</logback.version>
@@ -37,6 +38,11 @@
     </repositories>
 
     <dependencies>
+        <dependency>
+            <groupId>net.sf.jopt-simple</groupId>
+            <artifactId>jopt-simple</artifactId>
+            <version>${jopt.version}</version>
+        </dependency>
         <dependency>
             <groupId>com.pivovarit</groupId>
             <artifactId>throwing-function</artifactId>

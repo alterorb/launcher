@@ -11,6 +11,8 @@ public interface LauncherComponent {
 
     Launcher launcher();
 
+    LauncherConfig launcherConfig();
+
     LauncherController launcherController();
 
     VersionCheck versionCheck();

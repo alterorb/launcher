@@ -15,15 +15,12 @@ public class AlterorbAppletStub implements AppletStub {
     private final URL documentBase;
     private final URL codeBase;
 
-    public AlterorbAppletStub(AlterorbGame gameConfig, AlterorbAppletContext context) throws MalformedURLException {
+    public AlterorbAppletStub(AlterorbGame gameConfig, AlterorbAppletContext context, String documentBase, String codeBase) throws MalformedURLException {
         this.context = context;
         this.parameters = gameConfig.getParameters();
 
-        String envDocumentBase = System.getenv("DOCUMENT_BASE");
-        String envCodeBase = System.getenv("CODE_BASE");
-
-        this.documentBase = new URL(envDocumentBase != null ? envDocumentBase : gameConfig.getBaseUrl());
-        this.codeBase = new URL(envCodeBase != null ? envCodeBase : gameConfig.getBaseUrl());
+        this.documentBase = new URL(documentBase != null ? documentBase : gameConfig.getBaseUrl());
+        this.codeBase = new URL(codeBase != null ? codeBase : gameConfig.getBaseUrl());
     }
 
     @Override

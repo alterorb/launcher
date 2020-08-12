@@ -60,6 +60,7 @@ public class Launcher {
     private final DiscordIntegration discordIntegration;
     private final GameFrameController gameFrameController;
     private final LauncherController launcherController;
+    private final LauncherConfig launcherConfig;
     private final OkHttpClient okHttpClient;
     private final Storage storage;
     private final Moshi moshi;
@@ -67,10 +68,12 @@ public class Launcher {
     private Applet applet;
 
     @Inject
-    public Launcher(DiscordIntegration discordIntegration, GameFrameController gameFrameController, LauncherController launcherController, OkHttpClient okHttpClient, Storage storage, Moshi moshi) {
+    public Launcher(DiscordIntegration discordIntegration, GameFrameController gameFrameController, LauncherController launcherController, LauncherConfig launcherConfig, OkHttpClient okHttpClient,
+            Storage storage, Moshi moshi) {
         this.discordIntegration = discordIntegration;
         this.gameFrameController = gameFrameController;
         this.launcherController = launcherController;
+        this.launcherConfig = launcherConfig;
         this.okHttpClient = okHttpClient;
         this.storage = storage;
         this.moshi = moshi;
@@ -86,9 +89,17 @@ public class Launcher {
             LOGGER.error("Failed to create directories", e);
         }
         CompletableFuture.runAsync(discordIntegration::initialize);
-        CompletableFuture.supplyAsync(ThrowingSupplier.sneaky(this::fetchGameList))
-                         .thenAcceptAsync(launcherController::updateAvailableGames)
-                         .exceptionally(this::handleError);
+
+        String directLaunchGame = launcherConfig.getDirectLaunchGame();
+
+        if (directLaunchGame != null) {
+            LOGGER.info("Direct launching game={}", directLaunchGame);
+            launchGame(directLaunchGame);
+        } else {
+            CompletableFuture.supplyAsync(ThrowingSupplier.sneaky(this::fetchGameList))
+                             .thenAcceptAsync(launcherController::updateAvailableGames)
+                             .exceptionally(this::handleError);
+        }
     }
 
     public void shutdown() {
@@ -246,7 +257,7 @@ public class Launcher {
         applet = (Applet) mainClass.getConstructor().newInstance();
 
         AlterorbAppletContext appletContext = new AlterorbAppletContext(this);
-        AlterorbAppletStub alterorbAppletStub = new AlterorbAppletStub(game, appletContext);
+        AlterorbAppletStub alterorbAppletStub = new AlterorbAppletStub(game, appletContext, launcherConfig.getDocumentBase(), launcherConfig.getCodeBase());
         applet.setStub(alterorbAppletStub);
 
         LOGGER.debug("Initializing the applet...");
