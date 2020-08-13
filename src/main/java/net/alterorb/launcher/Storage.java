@@ -1,7 +1,6 @@
 package net.alterorb.launcher;
 
 import net.alterorb.launcher.alterorb.AlterorbGame;
-import net.alterorb.launcher.alterorb.AvailableGame;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;

@@ -8,7 +8,6 @@ import com.jagrosh.discordipc.entities.pipe.PipeStatus;
 import com.jagrosh.discordipc.exceptions.NoDiscordClientException;
 import lombok.extern.slf4j.Slf4j;
 import net.alterorb.launcher.alterorb.AlterorbGame;
-import net.alterorb.launcher.alterorb.AvailableGame;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
