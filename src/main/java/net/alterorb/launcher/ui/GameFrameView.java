@@ -14,6 +14,6 @@ public class GameFrameView extends JFrame {
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         addWindowListener(gameFrameController);
         setLocationRelativeTo(null);
-        setResizable(false);
+        setResizable(true);
     }
 }
