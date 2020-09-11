@@ -47,7 +47,7 @@ import java.util.jar.JarFile;
 public class Launcher {
 
     public static final String BASE_URL = "https://static.alterorb.net/launcher/v2/";
-    public static final String VERSION = "2.0";
+    public static final String VERSION = "2.1";
 
     private static final String BASE_GAME_CONFIG_URL = BASE_URL + "config/";
     private static final JsonAdapter<AlterorbGame> GAME_CONFIG_JSON_ADAPTER = new Moshi.Builder()
