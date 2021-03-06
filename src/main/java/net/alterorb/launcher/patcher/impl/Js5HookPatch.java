@@ -23,19 +23,29 @@ public class Js5HookPatch implements Patch {
 
     private static final Path JS5_OVERLAYS = Paths.get("js5");
 
-    public static byte[] fetchGroupInnerHook(String groupName, String fileName) {
-
+    public static byte[] loadDataHook(String groupName, String fileName) {
         Path file = JS5_OVERLAYS.resolve(groupName).resolve(fileName);
         LOGGER.debug("Looking for overlay={}", file);
-        if (Files.exists(file)) {
-            try {
-                LOGGER.info("Loading overlay={}", file);
-                return Files.readAllBytes(file);
-            } catch (IOException e) {
-                LOGGER.warn("Failed to load js5 overlay", e);
-            }
+        return loadIfExists(file);
+    }
+
+    public static byte[] loadDataEncryptedHook(String groupName, String fileName, int[] keys) {
+        Path file = JS5_OVERLAYS.resolve("enc").resolve(groupName).resolve(fileName);
+        LOGGER.debug("Looking for overlay (encrypted)={}", file);
+        return loadIfExists(file);
+    }
+
+    private static byte[] loadIfExists(Path overlayPath) {
+        if (!Files.exists(overlayPath)) {
+            return null;
         }
-        return null;
+        try {
+            LOGGER.info("Loading overlay={}", overlayPath);
+            return Files.readAllBytes(overlayPath);
+        } catch (IOException e) {
+            LOGGER.warn("Failed to load js5 overlay", e);
+            return null;
+        }
     }
 
     @Override
@@ -47,18 +57,25 @@ public class Js5HookPatch implements Patch {
     public byte[] apply(byte[] classData) {
         ClassNode classNode = byteArrayToClassNode(classData);
 
-        for (MethodNode method : classNode.methods) {
+        classNode.methods.stream()
+                         .filter(this::isLoadDataMethod)
+                         .findFirst()
+                         .ifPresent(method -> {
+                             copyMethod(classNode, method);
+                             patchLoadData(classNode, method);
+                         });
 
-            if (isFetchGroupInner(method)) {
-                copyMethod(classNode, method);
-                patchFetchGroupInner(classNode, method);
-                break;
-            }
-        }
+        classNode.methods.stream()
+                         .filter(this::isLoadDataEncryptedMethod)
+                         .findFirst()
+                         .ifPresent(method -> {
+                             copyMethod(classNode, method);
+                             patchLoadDataEncrypted(classNode, method);
+                         });
         return classNodeToByteArray(classNode);
     }
 
-    private boolean isFetchGroupInner(MethodNode methodNode) {
+    private boolean isLoadDataMethod(MethodNode methodNode) {
         return methodNode.name.equals("a") && methodNode.desc.equals(
                 Type.getMethodDescriptor(
                         Type.getType(byte[].class),
@@ -69,7 +86,19 @@ public class Js5HookPatch implements Patch {
         );
     }
 
-    private void patchFetchGroupInner(ClassNode owner, MethodNode methodNode) {
+    private boolean isLoadDataEncryptedMethod(MethodNode methodNode) {
+        return methodNode.name.equals("a") && methodNode.desc.equals(
+                Type.getMethodDescriptor(
+                        Type.getType(byte[].class),
+                        Type.getType(boolean.class),
+                        Type.getType(int[].class),
+                        Type.getType(String.class),
+                        Type.getType(String.class)
+                )
+        );
+    }
+
+    private void patchLoadData(ClassNode owner, MethodNode methodNode) {
         methodNode.tryCatchBlocks.clear();
         InsnList instructions = methodNode.instructions = new InsnList();
 
@@ -77,7 +106,7 @@ public class Js5HookPatch implements Patch {
         instructions.add(new VarInsnNode(Opcodes.ALOAD, 2));
         instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC,
                 Type.getType(Js5HookPatch.class).getInternalName(),
-                "fetchGroupInnerHook",
+                "loadDataHook",
                 Type.getMethodDescriptor(
                         Type.getType(byte[].class),
                         Type.getType(String.class),
@@ -98,6 +127,42 @@ public class Js5HookPatch implements Patch {
         instructions.add(new VarInsnNode(Opcodes.ILOAD, 1));
         instructions.add(new VarInsnNode(Opcodes.ALOAD, 2));
         instructions.add(new VarInsnNode(Opcodes.ALOAD, 3));
+        instructions.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, owner.name, synthetizeName(methodNode.name), methodNode.desc));
+        instructions.add(new InsnNode(Opcodes.ARETURN));
+    }
+
+    private void patchLoadDataEncrypted(ClassNode owner, MethodNode methodNode) {
+        methodNode.tryCatchBlocks.clear();
+        InsnList instructions = methodNode.instructions = new InsnList();
+
+        instructions.add(new VarInsnNode(Opcodes.ALOAD, 4));
+        instructions.add(new VarInsnNode(Opcodes.ALOAD, 3));
+        instructions.add(new VarInsnNode(Opcodes.ALOAD, 2));
+        instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC,
+                Type.getType(Js5HookPatch.class).getInternalName(),
+                "loadDataEncryptedHook",
+                Type.getMethodDescriptor(
+                        Type.getType(byte[].class),
+                        Type.getType(String.class),
+                        Type.getType(String.class),
+                        Type.getType(int[].class)
+                )
+        ));
+        instructions.add(new VarInsnNode(Opcodes.ASTORE, 5));
+
+        LabelNode originalCallLabel = new LabelNode();
+
+        instructions.add(new VarInsnNode(Opcodes.ALOAD, 5));
+        instructions.add(new JumpInsnNode(Opcodes.IFNULL, originalCallLabel));
+        instructions.add(new VarInsnNode(Opcodes.ALOAD, 5));
+        instructions.add(new InsnNode(Opcodes.ARETURN));
+
+        instructions.add(originalCallLabel);
+        instructions.add(new VarInsnNode(Opcodes.ALOAD, 0));
+        instructions.add(new VarInsnNode(Opcodes.ILOAD, 1));
+        instructions.add(new VarInsnNode(Opcodes.ALOAD, 2));
+        instructions.add(new VarInsnNode(Opcodes.ALOAD, 3));
+        instructions.add(new VarInsnNode(Opcodes.ALOAD, 4));
         instructions.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, owner.name, synthetizeName(methodNode.name), methodNode.desc));
         instructions.add(new InsnNode(Opcodes.ARETURN));
     }
