@@ -15,6 +15,7 @@ import net.alterorb.launcher.applet.AlterorbAppletStub;
 import net.alterorb.launcher.patcher.Patch;
 import net.alterorb.launcher.patcher.PatcherClassLoader;
 import net.alterorb.launcher.patcher.impl.CheckhostPatch;
+import net.alterorb.launcher.patcher.impl.Js5HookPatch;
 import net.alterorb.launcher.patcher.impl.LoginPublicKeyPatch;
 import net.alterorb.launcher.patcher.impl.MouseInputPatch;
 import net.alterorb.launcher.ui.GameFrameController;
@@ -252,7 +253,9 @@ public class Launcher {
         File gamepackFile = storage.getGamepackPath(game.getInternalName()).toFile();
 
         JarFile jarFile = new JarFile(gamepackFile);
-        PatcherClassLoader classLoader = new PatcherClassLoader(jarFile, game.getPatches());
+        List<Patch> patches = game.getPatches();
+        patches.add(new Js5HookPatch());
+        PatcherClassLoader classLoader = new PatcherClassLoader(jarFile, patches);
         Class<?> mainClass = classLoader.loadClass(game.getMainClass());
         applet = (Applet) mainClass.getConstructor().newInstance();
 
