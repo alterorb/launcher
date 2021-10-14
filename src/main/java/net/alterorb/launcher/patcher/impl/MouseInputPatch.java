@@ -1,6 +1,5 @@
 package net.alterorb.launcher.patcher.impl;
 
-import lombok.extern.slf4j.Slf4j;
 import net.alterorb.launcher.patcher.Patch;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.AbstractInsnNode;
@@ -8,15 +7,17 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 
 /**
  * Patches the MouseInput listener to make right click work on jdk9+.
  */
-@Slf4j
 public class MouseInputPatch implements Patch {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(MouseInputPatch.class);
     private String mouseListenerClass;
 
     @Override

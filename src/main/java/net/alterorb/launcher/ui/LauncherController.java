@@ -59,7 +59,7 @@ public class LauncherController extends WindowAdapter {
     }
 
     public void launch(ActionEvent e) {
-        launcher.get().launchGame(launcherViewModel.getSelectedGame().getInternalName());
+        launcher.get().launchGame(launcherViewModel.getSelectedGame().internalName());
         launcherView.disableLaunchButton();
     }
 }

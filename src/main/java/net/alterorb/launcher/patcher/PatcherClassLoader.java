@@ -1,6 +1,7 @@
 package net.alterorb.launcher.patcher;
 
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -11,9 +12,9 @@ import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-@Slf4j
 public class PatcherClassLoader extends ClassLoader {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(PatcherClassLoader.class);
     private final Map<String, byte[]> classData = new HashMap<>();
 
     public PatcherClassLoader(JarFile jar, List<Patch> patches) {

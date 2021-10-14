@@ -6,7 +6,6 @@ import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Moshi;
 import com.squareup.moshi.Types;
 import com.squareup.moshi.adapters.PolymorphicJsonAdapterFactory;
-import lombok.extern.slf4j.Slf4j;
 import net.alterorb.launcher.ProgressListenableSource.ProgressListener;
 import net.alterorb.launcher.alterorb.AlterorbGame;
 import net.alterorb.launcher.alterorb.AvailableGame;
@@ -29,6 +28,8 @@ import okio.BufferedSink;
 import okio.BufferedSource;
 import okio.HashingSink;
 import okio.Okio;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -42,12 +43,13 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.jar.JarFile;
 
-@Slf4j
 @Singleton
 public class Launcher {
 
     public static final String BASE_URL = "https://static.alterorb.net/launcher/v2/";
     public static final String VERSION = "2.1";
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Launcher.class);
 
     private static final String BASE_GAME_CONFIG_URL = BASE_URL + "config/";
     private static final JsonAdapter<AlterorbGame> GAME_CONFIG_JSON_ADAPTER = new Moshi.Builder()
@@ -86,7 +88,7 @@ public class Launcher {
         } catch (IOException e) {
             LOGGER.error("Failed to create directories", e);
         }
-        String directLaunchGame = launcherConfig.getDirectLaunchGame();
+        String directLaunchGame = launcherConfig.directLaunchGame();
 
         if (directLaunchGame != null) {
             LOGGER.info("Direct launching game={}", directLaunchGame);
@@ -162,11 +164,11 @@ public class Launcher {
     }
 
     private AlterorbGame validateGamepack(AlterorbGame game) throws IOException {
-        LOGGER.debug("Validating the gamepack for game={}", game.getInternalName());
+        LOGGER.debug("Validating the gamepack for game={}", game.internalName());
         Path gamepackPath = storage.getGamepackPath(game);
 
         if (!Files.exists(gamepackPath)) {
-            LOGGER.info("Gamepack does not exist, game={}", game.getInternalName());
+            LOGGER.info("Gamepack does not exist, game={}", game.internalName());
             downloadGamepack(game);
             return game;
         }
@@ -176,12 +178,12 @@ public class Launcher {
             source.readAll(hashingSink);
 
             String localSha256 = hashingSink.hash().hex();
-            String expectedSha256 = game.getGamepackHash();
+            String expectedSha256 = game.gamepackHash();
 
             LOGGER.debug("Gamepack hash, local={}, expected={}", localSha256, expectedSha256);
 
             if (!Objects.equals(localSha256, expectedSha256)) {
-                LOGGER.info("Gamepack hash miss match, game={}", game.getInternalName());
+                LOGGER.info("Gamepack hash miss match, game={}", game.internalName());
                 downloadGamepack(game);
             }
         }
@@ -190,7 +192,7 @@ public class Launcher {
 
     private void downloadGamepack(AlterorbGame game) throws IOException {
         Request request = new Builder()
-                .url(Launcher.BASE_URL + "gamepacks/" + game.getInternalName() + ".jar")
+                .url(Launcher.BASE_URL + "gamepacks/" + game.internalName() + ".jar")
                 .build();
 
         Response response = okHttpClient.newCall(request)
@@ -242,16 +244,16 @@ public class Launcher {
     }
 
     private AlterorbGame launchApplet(AlterorbGame game) throws Exception {
-        LOGGER.debug("Launching game={}", game.getInternalName());
-        File gamepackFile = storage.getGamepackPath(game.getInternalName()).toFile();
+        LOGGER.debug("Launching game={}", game.internalName());
+        File gamepackFile = storage.getGamepackPath(game.internalName()).toFile();
 
         JarFile jarFile = new JarFile(gamepackFile);
-        PatcherClassLoader classLoader = new PatcherClassLoader(jarFile, game.getPatches());
-        Class<?> mainClass = classLoader.loadClass(game.getMainClass());
+        PatcherClassLoader classLoader = new PatcherClassLoader(jarFile, game.patches());
+        Class<?> mainClass = classLoader.loadClass(game.mainClass());
         applet = (Applet) mainClass.getConstructor().newInstance();
 
         AlterorbAppletContext appletContext = new AlterorbAppletContext(this);
-        AlterorbAppletStub alterorbAppletStub = new AlterorbAppletStub(game, appletContext, launcherConfig.getDocumentBase(), launcherConfig.getCodeBase());
+        AlterorbAppletStub alterorbAppletStub = new AlterorbAppletStub(game, appletContext, launcherConfig.documentBase(), launcherConfig.codeBase());
         applet.setStub(alterorbAppletStub);
 
         LOGGER.debug("Initializing the applet...");

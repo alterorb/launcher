@@ -1,10 +1,8 @@
 package net.alterorb.launcher.alterorb;
 
-import lombok.Getter;
+public record AvailableGame(
+        String name,
+        String internalName
+) {
 
-@Getter
-public class AvailableGame {
-
-    private String name;
-    private String internalName;
 }

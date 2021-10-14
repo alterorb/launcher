@@ -2,21 +2,23 @@ package net.alterorb.launcher;
 
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Moshi;
-import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Request.Builder;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.IOException;
 import java.util.Objects;
 
-@Slf4j
 @Singleton
 public class VersionCheck {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(VersionCheck.class);
 
     private final OkHttpClient okHttpClient;
     private final Moshi moshi;

@@ -1,10 +1,11 @@
 package net.alterorb.launcher;
 
 import com.formdev.flatlaf.FlatDarkLaf;
-import lombok.extern.slf4j.Slf4j;
 import net.alterorb.launcher.ui.LauncherController;
 import net.alterorb.launcher.ui.UIConstants.Colors;
 import net.alterorb.launcher.ui.UIConstants.Fonts;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
@@ -16,9 +17,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Enumeration;
 
-@Slf4j
 public class Bootstrap {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(Bootstrap.class);
+    
     public static void main(String[] args) {
         LOGGER.info("Bootstrapping the launcher...");
         setupUiResources();

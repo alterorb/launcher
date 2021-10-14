@@ -1,7 +1,8 @@
 package net.alterorb.launcher.applet;
 
-import lombok.extern.slf4j.Slf4j;
 import net.alterorb.launcher.Launcher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.applet.Applet;
 import java.applet.AppletContext;
@@ -13,8 +14,9 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Objects;
 
-@Slf4j
 public class AlterorbAppletContext implements AppletContext {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AlterorbAppletContext.class);
 
     private static final String QUIT_APPLET_PATH = "/quit.ws";
 

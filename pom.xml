@@ -17,14 +17,13 @@
         <jopt.version>5.0.4</jopt.version>
         <throwingfunc.version>1.5.1</throwingfunc.version>
         <logback.version>1.2.3</logback.version>
-        <dagger.version>2.27</dagger.version>
+        <dagger.version>2.39.1</dagger.version>
         <flatlaf.version>0.32</flatlaf.version>
         <asm.version>8.0.1</asm.version>
         <moshi.version>1.9.2</moshi.version>
         <okhttp.version>3.14.9</okhttp.version>
         <okio.version>1.17.5</okio.version>
         <slf4j.version>1.7.30</slf4j.version>
-        <lombok.version>1.18.12</lombok.version>
     </properties>
 
     <repositories>
@@ -32,6 +31,11 @@
             <id>central</id>
             <name>bintray</name>
             <url>https://jcenter.bintray.com</url>
+        </repository>
+        <repository>
+            <id>maven_central</id>
+            <name>Maven Central</name>
+            <url>https://repo.maven.apache.org/maven2/</url>
         </repository>
     </repositories>
 
@@ -96,12 +100,6 @@
             <artifactId>slf4j-api</artifactId>
             <version>${slf4j.version}</version>
         </dependency>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>${lombok.version}</version>
-            <scope>provided</scope>
-        </dependency>
     </dependencies>
 
     <build>
@@ -126,11 +124,6 @@
                             <groupId>com.google.dagger</groupId>
                             <artifactId>dagger-compiler</artifactId>
                             <version>${dagger.version}</version>
-                        </path>
-                        <path>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                            <version>${lombok.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>

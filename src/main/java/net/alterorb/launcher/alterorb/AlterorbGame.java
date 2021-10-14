@@ -1,19 +1,18 @@
 package net.alterorb.launcher.alterorb;
 
-import lombok.Getter;
 import net.alterorb.launcher.patcher.Patch;
 
 import java.util.List;
 import java.util.Map;
 
-@Getter
-public class AlterorbGame {
+public record AlterorbGame(
+        String name,
+        String internalName,
+        String mainClass,
+        String baseUrl,
+        String gamepackHash,
+        Map<String, String> parameters,
+        List<Patch> patches
+) {
 
-    private String name;
-    private String internalName;
-    private String mainClass;
-    private String baseUrl;
-    private String gamepackHash;
-    private Map<String, String> parameters;
-    private List<Patch> patches;
 }

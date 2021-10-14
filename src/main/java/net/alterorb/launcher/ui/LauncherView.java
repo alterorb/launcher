@@ -1,6 +1,5 @@
 package net.alterorb.launcher.ui;
 
-import lombok.RequiredArgsConstructor;
 import net.alterorb.launcher.alterorb.AvailableGame;
 import net.alterorb.launcher.ui.UIConstants.Colors;
 import net.alterorb.launcher.ui.UIConstants.Fonts;
@@ -159,10 +158,13 @@ public class LauncherView extends JFrame {
         });
     }
 
-    @RequiredArgsConstructor
     private class ThumbnailSelectionListener extends MouseAdapter {
 
         private final GameThumbnail gameThumbnail;
+
+        private ThumbnailSelectionListener(GameThumbnail gameThumbnail) {
+            this.gameThumbnail = gameThumbnail;
+        }
 
         @Override
         public void mouseClicked(MouseEvent mouseEvent) {
