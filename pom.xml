@@ -16,7 +16,6 @@
         <maven.compiler.release>17</maven.compiler.release>
         <jopt.version>5.0.4</jopt.version>
         <throwingfunc.version>1.5.1</throwingfunc.version>
-        <discordipc.version>0.4</discordipc.version>
         <logback.version>1.2.3</logback.version>
         <dagger.version>2.27</dagger.version>
         <flatlaf.version>0.32</flatlaf.version>
@@ -46,11 +45,6 @@
             <groupId>com.pivovarit</groupId>
             <artifactId>throwing-function</artifactId>
             <version>${throwingfunc.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.jagrosh</groupId>
-            <artifactId>DiscordIPC</artifactId>
-            <version>${discordipc.version}</version>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>

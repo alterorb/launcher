@@ -57,7 +57,6 @@ public class Launcher {
                                               .withSubtype(LoginPublicKeyPatch.class, "loginpubkey"))
             .build().adapter(AlterorbGame.class);
 
-    private final DiscordIntegration discordIntegration;
     private final GameFrameController gameFrameController;
     private final LauncherController launcherController;
     private final LauncherConfig launcherConfig;
@@ -68,9 +67,8 @@ public class Launcher {
     private Applet applet;
 
     @Inject
-    public Launcher(DiscordIntegration discordIntegration, GameFrameController gameFrameController, LauncherController launcherController, LauncherConfig launcherConfig, OkHttpClient okHttpClient,
+    public Launcher(GameFrameController gameFrameController, LauncherController launcherController, LauncherConfig launcherConfig, OkHttpClient okHttpClient,
             Storage storage, Moshi moshi) {
-        this.discordIntegration = discordIntegration;
         this.gameFrameController = gameFrameController;
         this.launcherController = launcherController;
         this.launcherConfig = launcherConfig;
@@ -88,8 +86,6 @@ public class Launcher {
         } catch (IOException e) {
             LOGGER.error("Failed to create directories", e);
         }
-        CompletableFuture.runAsync(discordIntegration::initialize);
-
         String directLaunchGame = launcherConfig.getDirectLaunchGame();
 
         if (directLaunchGame != null) {
@@ -113,7 +109,6 @@ public class Launcher {
             LOGGER.debug("Stopping the applet...");
             applet.stop();
         }
-        discordIntegration.shutdown();
         LOGGER.debug("Finished shutting down the launcher");
     }
 
@@ -129,7 +124,6 @@ public class Launcher {
                              .thenApplyAsync(ThrowingFunction.sneaky(this::fetchGameConfig))
                              .thenApplyAsync(ThrowingFunction.sneaky(this::validateGamepack))
                              .thenApplyAsync(ThrowingFunction.sneaky(this::launchApplet))
-                             .thenAccept(discordIntegration::updateRichPresence)
                              .thenAccept(v -> launcherController.dispose())
                              .exceptionally(this::handleError);
         } catch (Exception e) {
