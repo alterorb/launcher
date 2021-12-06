@@ -1,33 +1,30 @@
 package net.alterorb.launcher.ui;
 
-import dagger.Lazy;
-import net.alterorb.launcher.Launcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import java.applet.Applet;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
-@Singleton
-public class GameFrameController extends WindowAdapter {
+public final class GameFrameController extends WindowAdapter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GameFrameController.class);
 
-    private final GameFrameView gameFrameView = new GameFrameView(this);
-    private final Lazy<Launcher> launcher;
+    private static final GameFrameController INSTANCE = new GameFrameController();
 
-    @Inject
-    public GameFrameController(Lazy<Launcher> launcher) {
-        this.launcher = launcher;
+    private final GameFrameView gameFrameView = new GameFrameView(this);
+
+    private GameFrameController() {
+    }
+
+    public static GameFrameController instance() {
+        return INSTANCE;
     }
 
     @Override
     public void windowClosing(WindowEvent e) {
-        LOGGER.trace("Game frame window is closing");
-        launcher.get().shutdown();
+        LOGGER.debug("Game frame window is closing");
     }
 
     public void display() {

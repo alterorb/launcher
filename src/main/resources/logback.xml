@@ -24,12 +24,12 @@
         </encoder>
     </appender>
 
-    <logger name="net.alterorb.launcher" level="trace" additivity="false">
+    <logger name="net.alterorb.launcher" level="${LOG_LEVEL:-info}" additivity="false">
         <appender-ref ref="stdout"/>
         <appender-ref ref="rolling-file"/>
     </logger>
 
-    <root level="error">
+    <root level="warn">
         <appender-ref ref="stdout"/>
     </root>
 </configuration>

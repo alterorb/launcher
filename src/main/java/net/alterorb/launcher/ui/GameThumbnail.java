@@ -1,6 +1,6 @@
 package net.alterorb.launcher.ui;
 
-import net.alterorb.launcher.alterorb.AvailableGame;
+import net.alterorb.launcher.alterorb.AlterOrbGame;
 import net.alterorb.launcher.ui.UIConstants.Colors;
 import net.alterorb.launcher.ui.UIConstants.Fonts;
 import org.slf4j.Logger;
@@ -29,24 +29,24 @@ public class GameThumbnail extends JComponent {
     private static final int MINIMUM_WIDTH = 105;
     private static final int MINIMUM_HEIGHT = 115;
 
-    private final AvailableGame availableGame;
+    private final AlterOrbGame game;
 
     private boolean selected;
     private boolean hovered;
     private BufferedImage thumbnail;
 
-    public AvailableGame getAvailableGame() {
-        return availableGame;
+    public AlterOrbGame game() {
+        return game;
     }
 
     public boolean isSelected() {
         return selected;
     }
 
-    public GameThumbnail(AvailableGame availableGame) {
-        this.availableGame = availableGame;
+    public GameThumbnail(AlterOrbGame game) {
+        this.game = game;
         try {
-            thumbnail = ImageIO.read(GameThumbnail.class.getResource("/thumbnails/" + availableGame.internalName() + ".jpg"));
+            thumbnail = ImageIO.read(GameThumbnail.class.getResource("/thumbnails/" + game.internalName() + ".jpg"));
         } catch (IOException | IllegalArgumentException e) {
             LOGGER.error("Failed to load game thumbnail", e);
         }
@@ -54,7 +54,7 @@ public class GameThumbnail extends JComponent {
         addMouseListener(new MouseHoverListener());
     }
 
-    public void setSelected(boolean selected) {
+    public void selected(boolean selected) {
         this.selected = selected;
         repaint();
     }
@@ -77,7 +77,7 @@ public class GameThumbnail extends JComponent {
 
         g.setFont(Fonts.OPEN_SANS_13);
         g.setColor(Colors.TEXT_DEFAULT);
-        drawGameTitle(g, availableGame.name());
+        drawGameTitle(g, game.name());
     }
 
     private void drawGameTitle(Graphics g, String title) {

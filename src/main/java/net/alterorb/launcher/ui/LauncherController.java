@@ -1,33 +1,33 @@
 package net.alterorb.launcher.ui;
 
-import dagger.Lazy;
-import net.alterorb.launcher.Launcher;
-import net.alterorb.launcher.alterorb.AvailableGame;
+import net.alterorb.launcher.alterorb.AlterOrbGame;
+import net.alterorb.launcher.event.EventDispatcher;
+import net.alterorb.launcher.event.ui.GameSelectedEvent;
+import net.alterorb.launcher.event.ui.LaunchGameEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.util.List;
 
-@Singleton
-public class LauncherController extends WindowAdapter {
+public final class LauncherController extends WindowAdapter {
 
-    private final LauncherViewModel launcherViewModel = new LauncherViewModel();
-    private final LauncherView launcherView = new LauncherView(this, launcherViewModel);
+    private static final Logger LOGGER = LoggerFactory.getLogger(LauncherController.class);
 
-    private final Lazy<Launcher> launcher;
+    private static final LauncherController INSTANCE = new LauncherController();
 
-    @Inject
-    public LauncherController(Lazy<Launcher> launcher) {
-        this.launcher = launcher;
+    private final LauncherView launcherView = new LauncherView(this);
+
+    private AlterOrbGame selectedGame;
+
+    private LauncherController() {
+        EventDispatcher.register(GameSelectedEvent.class, this::onGameSelected);
     }
 
-    @Override
-    public void windowClosing(WindowEvent e) {
-        launcher.get().shutdown();
+    public static LauncherController instance() {
+        return INSTANCE;
     }
 
     public void display() {
@@ -36,10 +36,6 @@ public class LauncherController extends WindowAdapter {
 
     public void dispose() {
         launcherView.dispose();
-    }
-
-    public void updateProgressBar(int percentage) {
-        launcherView.updateProgressBar(percentage);
     }
 
     public void setProgressBarMessage(String text) {
@@ -54,12 +50,17 @@ public class LauncherController extends WindowAdapter {
         launcherView.hideProgressBarAndText();
     }
 
-    public void updateAvailableGames(List<AvailableGame> games) {
+    public void updateAvailableGames(List<AlterOrbGame> games) {
         launcherView.updateGameList(games);
     }
 
     public void launch(ActionEvent e) {
-        launcher.get().launchGame(launcherViewModel.getSelectedGame().internalName());
+        EventDispatcher.dispatch(new LaunchGameEvent(selectedGame));
         launcherView.disableLaunchButton();
+    }
+
+    private void onGameSelected(GameSelectedEvent event) {
+        LOGGER.debug("Selected game {}", event.game().name());
+        selectedGame = event.game();
     }
 }

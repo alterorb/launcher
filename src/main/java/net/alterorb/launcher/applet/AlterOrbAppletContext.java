@@ -1,6 +1,5 @@
 package net.alterorb.launcher.applet;
 
-import net.alterorb.launcher.Launcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,17 +13,11 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Objects;
 
-public class AlterorbAppletContext implements AppletContext {
+public class AlterOrbAppletContext implements AppletContext {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AlterorbAppletContext.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AlterOrbAppletContext.class);
 
     private static final String QUIT_APPLET_PATH = "/quit.ws";
-
-    private final Launcher launcher;
-
-    public AlterorbAppletContext(Launcher launcher) {
-        this.launcher = launcher;
-    }
 
     @Override
     public AudioClip getAudioClip(URL url) {
@@ -55,8 +48,8 @@ public class AlterorbAppletContext implements AppletContext {
     public void showDocument(URL url, String target) {
 
         if (url != null && Objects.equals(url.getPath(), QUIT_APPLET_PATH)) {
-            LOGGER.trace("Applet requested shutdown");
-            launcher.shutdown();
+            LOGGER.info("Applet requested shutdown");
+            // TODO: Dispatch app quit event
         }
     }
 
