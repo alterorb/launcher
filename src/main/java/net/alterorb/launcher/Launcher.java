@@ -1,7 +1,10 @@
 package net.alterorb.launcher;
 
-import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import net.alterorb.launcher.alterorb.AlterOrbGame;
+import net.alterorb.launcher.alterorb.AlterOrbGame.AlterOrbGameAdapter;
+import net.alterorb.launcher.alterorb.RemoteConfig;
+import net.alterorb.launcher.alterorb.RemoteConfig.RemoteConfigAdapter;
 import net.alterorb.launcher.applet.AlterOrbAppletContext;
 import net.alterorb.launcher.applet.AlterOrbAppletStub;
 import net.alterorb.launcher.event.EventDispatcher;
@@ -10,9 +13,6 @@ import net.alterorb.launcher.event.ui.ShutdownEvent;
 import net.alterorb.launcher.ui.GameFrameController;
 import net.alterorb.launcher.ui.LauncherController;
 import net.alterorb.launcher.ui.UIConstants.Colors;
-import okio.BufferedSource;
-import okio.HashingSink;
-import okio.Okio;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +26,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Objects;
@@ -60,10 +59,6 @@ public class Launcher {
 
     public static Launcher create(LaunchParams launchParams) {
         return new Launcher(launchParams);
-    }
-
-    public static HttpClient httpClient() {
-        return HTTP_CLIENT;
     }
 
     public void initialize() throws IOException {
@@ -117,7 +112,10 @@ public class Launcher {
         if (response.statusCode() != 200) {
             throw new IOException("Failed to fetch remote config, response code: " + response.statusCode());
         }
-        var gson = new Gson();
+        var gson = new GsonBuilder()
+                .registerTypeAdapter(RemoteConfig.class, new RemoteConfigAdapter())
+                .registerTypeAdapter(AlterOrbGame.class, new AlterOrbGameAdapter())
+                .create();
 
         return gson.fromJson(new InputStreamReader(response.body()), RemoteConfig.class);
     }
@@ -136,19 +134,18 @@ public class Launcher {
 
     private boolean validateGamepack(AlterOrbGame game) throws IOException {
         LOGGER.debug("Validating the gamepack for game={}", game.internalName());
-        Path gamepackPath = Storage.getGamepackPath(game);
+        var gamepackPath = Storage.getGamepackPath(game);
 
         if (!Files.exists(gamepackPath)) {
             LOGGER.info("Gamepack does not exist, game={}", game.internalName());
             return false;
         }
 
-        try (HashingSink hashingSink = HashingSink.sha256(Okio.blackhole());
-                BufferedSource source = Okio.buffer(Okio.source(gamepackPath))) {
-            source.readAll(hashingSink);
+        try (var stream = HashingVoidStream.create(Files.newInputStream(gamepackPath))) {
+            stream.consume();
 
-            String localSha256 = hashingSink.hash().hex();
-            String expectedSha256 = game.gamepackHash();
+            var localSha256 = stream.hash();
+            var expectedSha256 = game.gamepackHash();
 
             LOGGER.debug("Gamepack hash, local={}, expected={}", localSha256, expectedSha256);
 
@@ -169,7 +166,7 @@ public class Launcher {
 
         LauncherController.instance().setProgressBarMessage("Downloading gamepack...");
 
-        Path gamepackPath = Storage.getGamepackPath(game);
+        var gamepackPath = Storage.getGamepackPath(game);
         Files.createDirectories(gamepackPath);
         var response = HTTP_CLIENT.send(httpRequest, BodyHandlers.ofFileDownload(gamepackPath));
 

@@ -1,7 +1,6 @@
 module alterorb.launcher {
     requires java.net.http;
     requires java.desktop;
-    requires okio;
     requires org.slf4j;
     requires com.formdev.flatlaf;
     requires jopt.simple;
