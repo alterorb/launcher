@@ -129,6 +129,7 @@ public class Launcher {
             LOGGER.debug("Stopping the applet...");
             applet.stop();
         }
+        EXECUTOR_SERVICE.shutdown();
         LOGGER.debug("Finished shutting down the launcher");
     }
 
@@ -159,7 +160,7 @@ public class Launcher {
 
     private void downloadGamepack(AlterOrbGame game) throws IOException, InterruptedException {
         var uri = URI.create(Launcher.BASE_URL + "jars/" + game.internalName() + ".jar");
-        LOGGER.debug("Downloading gamepack from {}", uri);
+        LOGGER.info("Downloading gamepack from {}", uri);
         var httpRequest = HttpRequest.newBuilder()
                                      .GET()
                                      .uri(uri)

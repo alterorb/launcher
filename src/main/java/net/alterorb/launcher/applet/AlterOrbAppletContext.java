@@ -1,5 +1,7 @@
 package net.alterorb.launcher.applet;
 
+import net.alterorb.launcher.event.EventDispatcher;
+import net.alterorb.launcher.event.ui.ShutdownEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,8 +50,8 @@ public class AlterOrbAppletContext implements AppletContext {
     public void showDocument(URL url, String target) {
 
         if (url != null && Objects.equals(url.getPath(), QUIT_APPLET_PATH)) {
-            LOGGER.info("Applet requested shutdown");
-            // TODO: Dispatch app quit event
+            LOGGER.debug("Applet requested shutdown");
+            EventDispatcher.dispatch(new ShutdownEvent());
         }
     }
 

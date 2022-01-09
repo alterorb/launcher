@@ -1,5 +1,7 @@
 package net.alterorb.launcher.ui;
 
+import net.alterorb.launcher.event.EventDispatcher;
+import net.alterorb.launcher.event.ui.ShutdownEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,6 +27,7 @@ public final class GameFrameController extends WindowAdapter {
     @Override
     public void windowClosing(WindowEvent e) {
         LOGGER.debug("Game frame window is closing");
+        EventDispatcher.dispatch(new ShutdownEvent());
     }
 
     public void display() {
