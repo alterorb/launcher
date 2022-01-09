@@ -154,21 +154,21 @@ public class Launcher {
                 return false;
             }
         }
-        return false;
+        return true;
     }
 
     private void downloadGamepack(AlterOrbGame game) throws IOException, InterruptedException {
-        LOGGER.debug("Downloading gamepack for game {}", game.name());
+        var uri = URI.create(Launcher.BASE_URL + "jars/" + game.internalName() + ".jar");
+        LOGGER.debug("Downloading gamepack from {}", uri);
         var httpRequest = HttpRequest.newBuilder()
                                      .GET()
-                                     .uri(URI.create(Launcher.BASE_URL + "gamepacks/" + game.internalName() + ".jar"))
+                                     .uri(uri)
                                      .build();
 
         LauncherController.instance().setProgressBarMessage("Downloading gamepack...");
 
         var gamepackPath = Storage.getGamepackPath(game);
-        Files.createDirectories(gamepackPath);
-        var response = HTTP_CLIENT.send(httpRequest, BodyHandlers.ofFileDownload(gamepackPath));
+        var response = HTTP_CLIENT.send(httpRequest, BodyHandlers.ofFile(gamepackPath));
 
         if (response.statusCode() != 200) {
             throw new IOException("Failed to download gamepack");
@@ -187,7 +187,11 @@ public class Launcher {
                 "instanceid", Long.toString(RANDOM.nextLong()),
                 "gamecrc", Integer.toString(game.gamecrc())
         );
-        var alterorbAppletStub = AlterOrbAppletStub.from(new AlterOrbAppletContext(), params, launchParams.documentBase(), launchParams.codeBase());
+
+        var documentBase = launchParams.documentBase() != null ? launchParams.documentBase() : remoteConfig.server();
+        var codeBase = launchParams.codeBase() != null ? launchParams.codeBase() : remoteConfig.server();
+
+        var alterorbAppletStub = AlterOrbAppletStub.from(new AlterOrbAppletContext(), params, documentBase, codeBase);
         applet.setStub(alterorbAppletStub);
 
         LOGGER.debug("Initializing the applet...");

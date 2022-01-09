@@ -26,6 +26,10 @@ public final class Storage {
         }
     }
 
+    public static Path gamepacksDirectory() {
+        return GAMEPACKS_DIRECTORY;
+    }
+
     public static boolean gamepackExists(String alterorbGameName) {
         return Files.exists(getGamepackPath(alterorbGameName));
     }

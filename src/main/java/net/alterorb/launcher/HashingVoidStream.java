@@ -26,7 +26,7 @@ public class HashingVoidStream extends BufferedInputStream {
     }
 
     @Override
-    public synchronized int read() throws IOException {
+    public int read() throws IOException {
         var read = super.read();
 
         if (read != -1) {
@@ -36,7 +36,7 @@ public class HashingVoidStream extends BufferedInputStream {
     }
 
     @Override
-    public synchronized int read(byte[] buffer, int offset, int length) throws IOException {
+    public int read(byte[] buffer, int offset, int length) throws IOException {
         var read = super.read(buffer, offset, length);
 
         if (read != -1) {
@@ -46,7 +46,9 @@ public class HashingVoidStream extends BufferedInputStream {
     }
 
     public void consume() throws IOException {
-        skipNBytes(Integer.MAX_VALUE);
+        while (read() != -1) {
+            // do nothing
+        }
     }
 
     public String hash() {
