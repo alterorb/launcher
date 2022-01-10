@@ -21,6 +21,6 @@ public record LaunchParams(
         var documentBase = optionSet.valueOf(documentBaseOptionSpec);
         var codeBase = optionSet.valueOf(codeBaseOptionSpec);
 
-        return new LaunchParams(directLaunchGame, documentBase, codeBase);
+        return new LaunchParams(codeBase, documentBase, directLaunchGame);
     }
 }
