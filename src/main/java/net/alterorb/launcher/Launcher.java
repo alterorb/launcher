@@ -26,6 +26,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Objects;
@@ -169,7 +170,7 @@ public class Launcher {
         LauncherController.instance().setProgressBarMessage("Downloading gamepack...");
 
         var gamepackPath = Storage.getGamepackPath(game);
-        var response = HTTP_CLIENT.send(httpRequest, BodyHandlers.ofFile(gamepackPath));
+        var response = HTTP_CLIENT.send(httpRequest, BodyHandlers.ofFile(gamepackPath, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING));
 
         if (response.statusCode() != 200) {
             throw new IOException("Failed to download gamepack");
