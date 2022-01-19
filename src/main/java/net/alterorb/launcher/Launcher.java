@@ -96,6 +96,14 @@ public class Launcher {
             } else {
                 controller.setProgressBarMessage("Outdated launcher, download a new one at alterorb.net", Colors.TEXT_ERROR);
             }
+
+            if (launchParams.directLaunchGame() != null) {
+                remoteConfig.games()
+                            .stream()
+                            .filter(game -> game.internalName().equals(launchParams.directLaunchGame()))
+                            .findFirst()
+                            .ifPresent(game -> EventDispatcher.dispatch(new LaunchGameEvent(game)));
+            }
         } catch (IOException | InterruptedException e) {
             LOGGER.error("Failed to load remote config", e);
             controller.setProgressBarMessage("There was an error while starting up the launcher", Colors.TEXT_ERROR);
