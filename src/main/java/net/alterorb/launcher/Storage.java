@@ -11,6 +11,7 @@ public final class Storage {
 
     private static final Path BASE_DIRECTORY = Paths.get(System.getProperty("user.home"), ".alterorb");
     private static final Path GAMEPACKS_DIRECTORY = BASE_DIRECTORY.resolve("gamepacks");
+    private static final Path CACHES_DIRECTORY = BASE_DIRECTORY.resolve("caches");
 
     private Storage() {
     }
@@ -24,21 +25,24 @@ public final class Storage {
         if (!Files.exists(GAMEPACKS_DIRECTORY)) {
             Files.createDirectories(GAMEPACKS_DIRECTORY);
         }
+
+        if (!Files.exists(CACHES_DIRECTORY)) {
+            Files.createDirectories(CACHES_DIRECTORY);
+        }
     }
 
-    public static Path gamepacksDirectory() {
-        return GAMEPACKS_DIRECTORY;
+    public static Path cacheFilePath(String subDirectory, String file) {
+        if (subDirectory != null) {
+            return CACHES_DIRECTORY.resolve(subDirectory).resolve(file);
+        }
+        return CACHES_DIRECTORY.resolve(file);
     }
 
-    public static boolean gamepackExists(String alterorbGameName) {
-        return Files.exists(getGamepackPath(alterorbGameName));
+    public static Path gamepackPath(AlterOrbGame game) {
+        return gamepackPath(game.internalName());
     }
 
-    public static Path getGamepackPath(AlterOrbGame game) {
-        return getGamepackPath(game.internalName());
-    }
-
-    public static Path getGamepackPath(String alterorbGameName) {
+    public static Path gamepackPath(String alterorbGameName) {
         return GAMEPACKS_DIRECTORY.resolve(alterorbGameName + ".jar");
     }
 }

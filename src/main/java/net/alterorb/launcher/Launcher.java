@@ -144,7 +144,7 @@ public class Launcher {
 
     private boolean validateGamepack(AlterOrbGame game) throws IOException {
         LOGGER.debug("Validating the gamepack for game={}", game.internalName());
-        var gamepackPath = Storage.getGamepackPath(game);
+        var gamepackPath = Storage.gamepackPath(game);
 
         if (!Files.exists(gamepackPath)) {
             LOGGER.info("Gamepack does not exist, game={}", game.internalName());
@@ -177,7 +177,7 @@ public class Launcher {
 
         LauncherController.instance().setProgressBarMessage("Downloading gamepack...");
 
-        var gamepackPath = Storage.getGamepackPath(game);
+        var gamepackPath = Storage.gamepackPath(game);
         var response = HTTP_CLIENT.send(httpRequest, BodyHandlers.ofFile(gamepackPath, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING));
 
         if (response.statusCode() != 200) {
@@ -187,7 +187,7 @@ public class Launcher {
 
     private void launchApplet(AlterOrbGame game) throws Exception {
         LOGGER.debug("Launching game={}", game.internalName());
-        var gamepackFile = Storage.getGamepackPath(game.internalName());
+        var gamepackFile = Storage.gamepackPath(game.internalName());
 
         var classLoader = new URLClassLoader(new URL[] {gamepackFile.toUri().toURL()});
         var mainClass = classLoader.loadClass(game.mainClass());
