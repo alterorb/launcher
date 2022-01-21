@@ -189,7 +189,7 @@ public class Launcher {
         var gamepackFile = Storage.gamepackPath(game.internalName());
 
         try {
-            URLClassLoader classLoader = new URLClassLoader(new URL[] {gamepackFile.toUri().toURL()});
+            URLClassLoader classLoader = new URLClassLoader(new URL[] {gamepackFile.toUri().toURL()}, Hook.class.getClassLoader());
             var mainClass = classLoader.loadClass(game.mainClass());
             applet = (Applet) mainClass.getConstructor().newInstance();
 
