@@ -77,12 +77,11 @@ public class Launcher {
             if (!validateGamepack(event.game())) {
                 downloadGamepack(event.game());
             }
-            launchApplet(event.game());
-            LauncherController.instance().dispose();
-        } catch (Exception e) {
-            LOGGER.error("Encountered an error while launching the game", e);
-            LauncherController.instance().setProgressBarMessage("There was an error while launching the game", Colors.TEXT_ERROR);
+        } catch (IOException | InterruptedException e) {
+            LOGGER.error("Encountered an error while downloading the gamepack", e);
+            LauncherController.instance().setProgressBarMessage("There was an error while downloading the game", Colors.TEXT_ERROR);
         }
+        EXECUTOR_SERVICE.execute(() -> launchApplet(event.game()));
     }
 
     private void startup() {
@@ -185,31 +184,37 @@ public class Launcher {
         }
     }
 
-    private void launchApplet(AlterOrbGame game) throws Exception {
+    private void launchApplet(AlterOrbGame game) {
         LOGGER.debug("Launching game={}", game.internalName());
         var gamepackFile = Storage.gamepackPath(game.internalName());
 
-        var classLoader = new URLClassLoader(new URL[] {gamepackFile.toUri().toURL()});
-        var mainClass = classLoader.loadClass(game.mainClass());
-        applet = (Applet) mainClass.getConstructor().newInstance();
+        try {
+            URLClassLoader classLoader = new URLClassLoader(new URL[] {gamepackFile.toUri().toURL()});
+            var mainClass = classLoader.loadClass(game.mainClass());
+            applet = (Applet) mainClass.getConstructor().newInstance();
 
-        Map<String, String> params = Map.of(
-                "instanceid", Long.toString(RANDOM.nextLong()),
-                "gamecrc", Integer.toString(game.gamecrc())
-        );
+            Map<String, String> params = Map.of(
+                    "instanceid", Long.toString(RANDOM.nextLong()),
+                    "gamecrc", Integer.toString(game.gamecrc())
+            );
 
-        var documentBase = launchParams.documentBase() != null ? launchParams.documentBase() : remoteConfig.server();
-        var codeBase = launchParams.codeBase() != null ? launchParams.codeBase() : remoteConfig.server();
+            var documentBase = launchParams.documentBase() != null ? launchParams.documentBase() : remoteConfig.server();
+            var codeBase = launchParams.codeBase() != null ? launchParams.codeBase() : remoteConfig.server();
 
-        var alterorbAppletStub = AlterOrbAppletStub.from(new AlterOrbAppletContext(), params, documentBase, codeBase);
-        applet.setStub(alterorbAppletStub);
+            var alterorbAppletStub = AlterOrbAppletStub.from(new AlterOrbAppletContext(), params, documentBase, codeBase);
+            applet.setStub(alterorbAppletStub);
 
-        LOGGER.debug("Initializing the applet...");
-        applet.init();
-        applet.start();
-        LOGGER.debug("Applet initialized, displaying the game view...");
-        GameFrameController.instance().addApplet(applet);
-        GameFrameController.instance().display();
-        LOGGER.debug("Finished launching the game");
+            LOGGER.debug("Initializing the applet...");
+            applet.init();
+            applet.start();
+            LOGGER.debug("Applet initialized, displaying the game view...");
+            LauncherController.instance().dispose();
+            GameFrameController.instance().addApplet(applet);
+            GameFrameController.instance().display();
+            LOGGER.debug("Finished launching the game");
+        } catch (Exception e) {
+            LOGGER.error("Encountered an error while launching the applet", e);
+            LauncherController.instance().setProgressBarMessage("There was an error while launching the game", Colors.TEXT_ERROR);
+        }
     }
 }
