@@ -74,8 +74,9 @@ jobs:
             --linux-shortcut \
             --linux-deb-maintainer alterorb@alterorb.net
 
-      - name: Release
+      - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
+          name: ${{ env.RELEASE_VERSION }}
           draft: true
           files: alterorb-*/alterorb*
