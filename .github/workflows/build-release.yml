@@ -24,9 +24,11 @@ jobs:
 
       - name: Set release version env variable
         run: echo "RELEASE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
+        shell: bash
 
       - name: Build windows 64
         if: matrix.os == 'windows-latest'
+        shell: bash
         run: |
           jlink \
             --no-header-files \
@@ -74,6 +76,6 @@ jobs:
 
       - name: Release
         uses: softprops/action-gh-release@v1
-        draft: true
         with:
-          files: alterorb-*/alterorb-*
+          draft: true
+          files: alterorb-*/alterorb*
