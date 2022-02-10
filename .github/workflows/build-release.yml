@@ -74,6 +74,17 @@ jobs:
             --linux-shortcut \
             --linux-deb-maintainer alterorb@alterorb.net
 
+      - name: Build cross platform
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          mv target/modules ./
+          echo "#!/bin/bash
+          java -cp \"$(find modules/ -type f | xargs echo | sed 's/ /:/g')\" net.alterorb.launcher.Bootstrap > /dev/null 2>&1 &" \
+          > launch.sh
+          echo "start javaw -cp \"$(find modules/ -type f | xargs echo | sed 's/ /;/g')\" net.alterorb.launcher.Bootstrap" \
+          > launch.bat
+          zip alterorb-$RELEASE_VERSION/alterorb-$RELEASE_VERSION.zip modules/* launch.sh launch.bat \
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
