@@ -26,13 +26,14 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.file.Files;
-import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import static java.nio.file.StandardOpenOption.*;
 
 public class Launcher {
 
@@ -77,11 +78,11 @@ public class Launcher {
             if (!validateGamepack(event.game())) {
                 downloadGamepack(event.game());
             }
+            EXECUTOR_SERVICE.execute(() -> launchApplet(event.game()));
         } catch (IOException | InterruptedException e) {
             LOGGER.error("Encountered an error while downloading the gamepack", e);
             LauncherController.instance().setProgressBarMessage("There was an error while downloading the game", Colors.TEXT_ERROR);
         }
-        EXECUTOR_SERVICE.execute(() -> launchApplet(event.game()));
     }
 
     private void startup() {
@@ -177,7 +178,7 @@ public class Launcher {
         LauncherController.instance().setProgressBarMessage("Downloading gamepack...");
 
         var gamepackPath = Storage.gamepackPath(game);
-        var response = HTTP_CLIENT.send(httpRequest, BodyHandlers.ofFile(gamepackPath, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING));
+        var response = HTTP_CLIENT.send(httpRequest, BodyHandlers.ofFile(gamepackPath, CREATE, WRITE, TRUNCATE_EXISTING));
 
         if (response.statusCode() != 200) {
             throw new IOException("Failed to download gamepack");
