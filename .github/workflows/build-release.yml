@@ -1,0 +1,95 @@
+name: Build release binaries
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up JDK
+        uses: actions/setup-java@v2
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Compile project
+        run: mvn -ntp clean package
+
+      - name: Set release version env variable
+        run: echo "RELEASE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Build windows 64
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        run: |
+          jlink \
+            --no-header-files \
+            --no-man-pages \
+            --compress=2 \
+            --strip-debug \
+            --add-modules java.base,java.desktop,java.net.http,java.naming,jdk.crypto.ec \
+            --output jdk-win64
+
+          jpackage \
+            --app-version $RELEASE_VERSION \
+            --input target/modules \
+            --dest alterorb-$RELEASE_VERSION \
+            --icon alterorb.ico \
+            --name alterorb \
+            --type exe \
+            --runtime-image jdk-win64 \
+            --java-options -Xmx256m \
+            --main-jar alterorb-launcher-$RELEASE_VERSION.jar \
+            --main-class net.alterorb.launcher.Bootstrap \
+            --win-shortcut
+
+      - name: Build linux 64
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          jlink \
+            --no-header-files \
+            --no-man-pages \
+            --compress=2 \
+            --strip-debug \
+            --add-modules java.base,java.desktop,java.net.http,java.naming,jdk.crypto.ec \
+            --output jdk-linux64
+          
+          jpackage \
+            --app-version $RELEASE_VERSION \
+            --input target/modules \
+            --dest alterorb-$RELEASE_VERSION \
+            --icon alterorb.png \
+            --name alterorb \
+            --type deb \
+            --runtime-image jdk-linux64 \
+            --java-options -Xmx256m \
+            --main-jar alterorb-launcher-$RELEASE_VERSION.jar \
+            --main-class net.alterorb.launcher.Bootstrap \
+            --linux-shortcut \
+            --linux-deb-maintainer alterorb@alterorb.net
+
+      - name: Build cross platform
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          mv target/modules ./
+          echo "#!/bin/bash
+          java -cp \"$(find modules/ -type f | xargs echo | sed 's/ /:/g')\" net.alterorb.launcher.Bootstrap > /dev/null 2>&1 &" \
+          > launch.sh
+          echo "start javaw -cp \"$(find modules/ -type f | xargs echo | sed 's/ /;/g')\" net.alterorb.launcher.Bootstrap" \
+          > launch.bat
+          zip alterorb-$RELEASE_VERSION/alterorb-$RELEASE_VERSION.zip modules/* launch.sh launch.bat \
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: ${{ env.RELEASE_VERSION }}
+          draft: true
+          files: alterorb-*/alterorb*

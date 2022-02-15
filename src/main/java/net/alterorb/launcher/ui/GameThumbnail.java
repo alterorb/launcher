@@ -1,10 +1,10 @@
 package net.alterorb.launcher.ui;
 
-import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
-import net.alterorb.launcher.alterorb.AvailableGame;
+import net.alterorb.launcher.alterorb.AlterOrbGame;
 import net.alterorb.launcher.ui.UIConstants.Colors;
 import net.alterorb.launcher.ui.UIConstants.Fonts;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.imageio.ImageIO;
 import javax.swing.JComponent;
@@ -20,26 +20,33 @@ import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 
-@Slf4j
 public class GameThumbnail extends JComponent {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(GameThumbnail.class);
 
     private static final RenderingHints ANTI_ALIAS_HINT = new RenderingHints(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
     private static final int MAX_GAME_TITLE_WIDTH = 95;
     private static final int MINIMUM_WIDTH = 105;
     private static final int MINIMUM_HEIGHT = 115;
 
-    @Getter
-    private final AvailableGame availableGame;
+    private final AlterOrbGame game;
 
-    @Getter
     private boolean selected;
     private boolean hovered;
     private BufferedImage thumbnail;
 
-    public GameThumbnail(AvailableGame availableGame) {
-        this.availableGame = availableGame;
+    public AlterOrbGame game() {
+        return game;
+    }
+
+    public boolean isSelected() {
+        return selected;
+    }
+
+    public GameThumbnail(AlterOrbGame game) {
+        this.game = game;
         try {
-            thumbnail = ImageIO.read(GameThumbnail.class.getResource("/thumbnails/" + availableGame.getInternalName() + ".jpg"));
+            thumbnail = ImageIO.read(GameThumbnail.class.getResource("/thumbnails/" + game.internalName() + ".jpg"));
         } catch (IOException | IllegalArgumentException e) {
             LOGGER.error("Failed to load game thumbnail", e);
         }
@@ -47,7 +54,7 @@ public class GameThumbnail extends JComponent {
         addMouseListener(new MouseHoverListener());
     }
 
-    public void setSelected(boolean selected) {
+    public void selected(boolean selected) {
         this.selected = selected;
         repaint();
     }
@@ -70,7 +77,7 @@ public class GameThumbnail extends JComponent {
 
         g.setFont(Fonts.OPEN_SANS_13);
         g.setColor(Colors.TEXT_DEFAULT);
-        drawGameTitle(g, availableGame.getName());
+        drawGameTitle(g, game.name());
     }
 
     private void drawGameTitle(Graphics g, String title) {

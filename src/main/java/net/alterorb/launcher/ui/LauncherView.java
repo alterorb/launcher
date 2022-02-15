@@ -1,11 +1,11 @@
 package net.alterorb.launcher.ui;
 
-import lombok.RequiredArgsConstructor;
-import net.alterorb.launcher.alterorb.AvailableGame;
+import net.alterorb.launcher.alterorb.AlterOrbGame;
+import net.alterorb.launcher.event.EventDispatcher;
+import net.alterorb.launcher.event.ui.GameSelectedEvent;
 import net.alterorb.launcher.ui.UIConstants.Colors;
 import net.alterorb.launcher.ui.UIConstants.Fonts;
 
-import javax.inject.Singleton;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -27,7 +27,6 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 
-@Singleton
 public class LauncherView extends JFrame {
 
     private static final int GAME_LIST_CONTAINER_WIDTH = 400;
@@ -38,18 +37,15 @@ public class LauncherView extends JFrame {
     private final JPanel gameListContainer = new JPanel();
     private final JLabel placeholderText = new JLabel("Fetching games list...");
 
-    private final LauncherViewModel model;
-
     private List<GameThumbnail> gameThumbnails;
 
-    LauncherView(LauncherController controller, LauncherViewModel model) {
-        this.model = model;
+    LauncherView(LauncherController controller) {
         setTitle("AlterOrb Launcher");
         setSize(514, 391);
         setResizable(false);
         setLocationRelativeTo(null);
         addWindowListener(controller);
-        setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
         JPanel rootContainer = new JPanel();
         rootContainer.setLayout(new BoxLayout(rootContainer, BoxLayout.Y_AXIS));
@@ -94,7 +90,7 @@ public class LauncherView extends JFrame {
         progressBarText.setHorizontalAlignment(JLabel.CENTER);
         progressBarText.setAlignmentX(Component.CENTER_ALIGNMENT);
         progressBarText.setMaximumSize(new Dimension(315, 20));
-        progressBarText.setText("Checking for launcher updates...");
+        progressBarText.setText("Downloading launcher configuration...");
         progressBarContainer.add(progressBarText);
 
         launchButton.setEnabled(false);
@@ -113,7 +109,6 @@ public class LauncherView extends JFrame {
     void updateProgressBar(int percentage) {
 
         SwingUtilities.invokeLater(() -> {
-
             if (!progressBar.isVisible()) {
                 progressBar.setVisible(true);
             }
@@ -133,7 +128,6 @@ public class LauncherView extends JFrame {
     void updateProgressBarText(String text, Color color) {
 
         SwingUtilities.invokeLater(() -> {
-
             if (text != null) {
                 progressBarText.setForeground(color);
             }
@@ -141,13 +135,13 @@ public class LauncherView extends JFrame {
         });
     }
 
-    void updateGameList(List<AvailableGame> games) {
+    void updateGameList(List<AlterOrbGame> games) {
         SwingUtilities.invokeLater(() -> {
             gameListContainer.remove(placeholderText);
             gameListContainer.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 10));
             gameThumbnails = new ArrayList<>(games.size());
 
-            for (AvailableGame game : games) {
+            for (var game : games) {
                 GameThumbnail gameThumbnail = new GameThumbnail(game);
                 gameThumbnail.addMouseListener(new ThumbnailSelectionListener(gameThumbnail));
                 gameListContainer.add(gameThumbnail);
@@ -159,28 +153,28 @@ public class LauncherView extends JFrame {
         });
     }
 
-    @RequiredArgsConstructor
     private class ThumbnailSelectionListener extends MouseAdapter {
 
         private final GameThumbnail gameThumbnail;
+
+        private ThumbnailSelectionListener(GameThumbnail gameThumbnail) {
+            this.gameThumbnail = gameThumbnail;
+        }
 
         @Override
         public void mouseClicked(MouseEvent mouseEvent) {
             boolean selected = !gameThumbnail.isSelected();
             launchButton.setEnabled(selected);
-            gameThumbnail.setSelected(selected);
+            gameThumbnail.selected(selected);
 
             if (selected) {
-                model.setSelectedGame(gameThumbnail.getAvailableGame());
-
+                EventDispatcher.dispatch(new GameSelectedEvent(gameThumbnail.game()));
                 for (GameThumbnail thumbnail : gameThumbnails) {
 
                     if (thumbnail != gameThumbnail) {
-                        thumbnail.setSelected(false);
+                        thumbnail.selected(false);
                     }
                 }
-            } else {
-                model.setSelectedGame(null);
             }
         }
     }
