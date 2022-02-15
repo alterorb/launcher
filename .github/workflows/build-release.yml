@@ -20,7 +20,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Compile project
-        run: mvn clean package
+        run: mvn -ntp clean package
 
       - name: Set release version env variable
         run: echo "RELEASE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
