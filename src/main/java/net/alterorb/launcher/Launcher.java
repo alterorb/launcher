@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import java.applet.Applet;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -46,7 +47,12 @@ public class Launcher {
     private static final String VERSION = "3.0.0";
 
     private static final Random RANDOM = new Random();
-    private static final ExecutorService EXECUTOR_SERVICE = Executors.newSingleThreadExecutor();
+    private static final ExecutorService EXECUTOR_SERVICE = Executors.newSingleThreadExecutor(runnable -> {
+        var thread = new Thread(runnable);
+        thread.setName("ExecutorThread");
+        thread.setUncaughtExceptionHandler(new ExceptionHandler());
+        return thread;
+    });
 
     private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
                                                             .connectTimeout(Duration.ofSeconds(10))
@@ -90,6 +96,7 @@ public class Launcher {
     private void startup() {
         var controller = LauncherController.instance();
         try {
+            LOGGER.info("Fetching remote config...");
             remoteConfig = fetchRemoteConfig();
 
             if (remoteConfig.version().equals(VERSION)) {
@@ -175,7 +182,7 @@ public class Launcher {
         LOGGER.info("Downloading gamepack from {}", uri);
         var httpRequest = HttpRequest.newBuilder()
                                      .GET()
-                                     .timeout(Duration.ofMinutes(2))
+                                     .timeout(Duration.ofSeconds(30))
                                      .uri(uri)
                                      .build();
 
@@ -220,6 +227,14 @@ public class Launcher {
         } catch (Exception e) {
             LOGGER.error("Encountered an error while launching the applet", e);
             LauncherController.instance().setProgressBarMessage("There was an error while launching the game", Colors.TEXT_ERROR);
+        }
+    }
+
+    private static final class ExceptionHandler implements UncaughtExceptionHandler {
+
+        @Override
+        public void uncaughtException(Thread t, Throwable e) {
+            LOGGER.error("Uncaught exception", e);
         }
     }
 }
