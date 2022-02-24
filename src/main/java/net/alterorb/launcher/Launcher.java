@@ -1,6 +1,8 @@
 package net.alterorb.launcher;
 
 import com.google.gson.GsonBuilder;
+import com.vdurmont.semver4j.Semver;
+import com.vdurmont.semver4j.Semver.VersionDiff;
 import net.alterorb.launcher.alterorb.AlterOrbGame;
 import net.alterorb.launcher.alterorb.AlterOrbGame.AlterOrbGameAdapter;
 import net.alterorb.launcher.alterorb.RemoteConfig;
@@ -44,7 +46,7 @@ public class Launcher {
 
     private static final String BASE_URL = "https://static.alterorb.net/launcher/v3/";
     private static final String CONFIG_URL = BASE_URL + "config.json";
-    private static final String VERSION = "3.0.0";
+    private static final Semver VERSION = new Semver("3.0.0");
 
     private static final Random RANDOM = new Random();
     private static final ExecutorService EXECUTOR_SERVICE = Executors.newSingleThreadExecutor(runnable -> {
@@ -98,8 +100,11 @@ public class Launcher {
         try {
             LOGGER.info("Fetching remote config...");
             remoteConfig = fetchRemoteConfig();
+            LOGGER.debug("Latest version is {}", remoteConfig.version());
+            var diff = remoteConfig.version().diff(VERSION);
 
-            if (remoteConfig.version().equals(VERSION)) {
+            LOGGER.debug("Semver diff is {}", diff);
+            if (diff == VersionDiff.PATCH || diff == VersionDiff.NONE) {
                 controller.hideProgressBarAndText();
                 controller.updateAvailableGames(remoteConfig.games());
             } else {
@@ -153,11 +158,11 @@ public class Launcher {
     }
 
     private boolean validateGamepack(AlterOrbGame game) throws IOException {
-        LOGGER.debug("Validating the gamepack for game={}", game.internalName());
+        LOGGER.info("Validating the gamepack for game={}", game.internalName());
         var gamepackPath = Storage.gamepackPath(game);
 
         if (!Files.exists(gamepackPath)) {
-            LOGGER.info("Gamepack does not exist, game={}", game.internalName());
+            LOGGER.debug("Gamepack does not exist, game={}", game.internalName());
             return false;
         }
 
@@ -170,7 +175,7 @@ public class Launcher {
             LOGGER.debug("Gamepack hash, local={}, expected={}", localSha256, expectedSha256);
 
             if (!Objects.equals(localSha256, expectedSha256)) {
-                LOGGER.info("Gamepack hash miss match, game={}", game.internalName());
+                LOGGER.debug("Gamepack hash miss match, game={}", game.internalName());
                 return false;
             }
         }
