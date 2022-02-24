@@ -34,8 +34,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static java.nio.file.StandardOpenOption.CREATE;
-import static java.nio.file.StandardOpenOption.WRITE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
+import static java.nio.file.StandardOpenOption.WRITE;
 
 public class Launcher {
 
@@ -115,6 +115,7 @@ public class Launcher {
     private RemoteConfig fetchRemoteConfig() throws IOException, InterruptedException {
         var request = HttpRequest.newBuilder()
                                  .GET()
+                                 .timeout(Duration.ofSeconds(20))
                                  .uri(URI.create(CONFIG_URL))
                                  .build();
 
@@ -174,6 +175,7 @@ public class Launcher {
         LOGGER.info("Downloading gamepack from {}", uri);
         var httpRequest = HttpRequest.newBuilder()
                                      .GET()
+                                     .timeout(Duration.ofMinutes(2))
                                      .uri(uri)
                                      .build();
 
