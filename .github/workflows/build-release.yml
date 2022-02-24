@@ -49,7 +49,8 @@ jobs:
             --java-options -Xmx256m \
             --main-jar alterorb-launcher-$RELEASE_VERSION.jar \
             --main-class net.alterorb.launcher.Bootstrap \
-            --win-shortcut
+            --win-shortcut \
+            --win-dir-chooser
 
       - name: Build linux 64
         if: matrix.os == 'ubuntu-latest'

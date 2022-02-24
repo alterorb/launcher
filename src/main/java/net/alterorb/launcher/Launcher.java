@@ -1,6 +1,8 @@
 package net.alterorb.launcher;
 
 import com.google.gson.GsonBuilder;
+import com.vdurmont.semver4j.Semver;
+import com.vdurmont.semver4j.Semver.VersionDiff;
 import net.alterorb.launcher.alterorb.AlterOrbGame;
 import net.alterorb.launcher.alterorb.AlterOrbGame.AlterOrbGameAdapter;
 import net.alterorb.launcher.alterorb.RemoteConfig;
@@ -19,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import java.applet.Applet;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -34,8 +37,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static java.nio.file.StandardOpenOption.CREATE;
-import static java.nio.file.StandardOpenOption.WRITE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
+import static java.nio.file.StandardOpenOption.WRITE;
 
 public class Launcher {
 
@@ -43,10 +46,15 @@ public class Launcher {
 
     private static final String BASE_URL = "https://static.alterorb.net/launcher/v3/";
     private static final String CONFIG_URL = BASE_URL + "config.json";
-    private static final String VERSION = "3.0.0";
+    private static final Semver VERSION = new Semver("3.1.0");
 
     private static final Random RANDOM = new Random();
-    private static final ExecutorService EXECUTOR_SERVICE = Executors.newSingleThreadExecutor();
+    private static final ExecutorService EXECUTOR_SERVICE = Executors.newSingleThreadExecutor(runnable -> {
+        var thread = new Thread(runnable);
+        thread.setName("ExecutorThread");
+        thread.setUncaughtExceptionHandler(new ExceptionHandler());
+        return thread;
+    });
 
     private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
                                                             .connectTimeout(Duration.ofSeconds(10))
@@ -90,9 +98,13 @@ public class Launcher {
     private void startup() {
         var controller = LauncherController.instance();
         try {
+            LOGGER.info("Fetching remote config...");
             remoteConfig = fetchRemoteConfig();
+            LOGGER.debug("Latest version is {}", remoteConfig.version());
+            var diff = remoteConfig.version().diff(VERSION);
 
-            if (remoteConfig.version().equals(VERSION)) {
+            LOGGER.debug("Semver diff is {}", diff);
+            if (diff == VersionDiff.PATCH || diff == VersionDiff.NONE) {
                 controller.hideProgressBarAndText();
                 controller.updateAvailableGames(remoteConfig.games());
             } else {
@@ -115,6 +127,7 @@ public class Launcher {
     private RemoteConfig fetchRemoteConfig() throws IOException, InterruptedException {
         var request = HttpRequest.newBuilder()
                                  .GET()
+                                 .timeout(Duration.ofSeconds(20))
                                  .uri(URI.create(CONFIG_URL))
                                  .build();
 
@@ -145,11 +158,11 @@ public class Launcher {
     }
 
     private boolean validateGamepack(AlterOrbGame game) throws IOException {
-        LOGGER.debug("Validating the gamepack for game={}", game.internalName());
+        LOGGER.info("Validating the gamepack for game={}", game.internalName());
         var gamepackPath = Storage.gamepackPath(game);
 
         if (!Files.exists(gamepackPath)) {
-            LOGGER.info("Gamepack does not exist, game={}", game.internalName());
+            LOGGER.debug("Gamepack does not exist, game={}", game.internalName());
             return false;
         }
 
@@ -162,7 +175,7 @@ public class Launcher {
             LOGGER.debug("Gamepack hash, local={}, expected={}", localSha256, expectedSha256);
 
             if (!Objects.equals(localSha256, expectedSha256)) {
-                LOGGER.info("Gamepack hash miss match, game={}", game.internalName());
+                LOGGER.debug("Gamepack hash miss match, game={}", game.internalName());
                 return false;
             }
         }
@@ -174,6 +187,7 @@ public class Launcher {
         LOGGER.info("Downloading gamepack from {}", uri);
         var httpRequest = HttpRequest.newBuilder()
                                      .GET()
+                                     .timeout(Duration.ofSeconds(30))
                                      .uri(uri)
                                      .build();
 
@@ -218,6 +232,14 @@ public class Launcher {
         } catch (Exception e) {
             LOGGER.error("Encountered an error while launching the applet", e);
             LauncherController.instance().setProgressBarMessage("There was an error while launching the game", Colors.TEXT_ERROR);
+        }
+    }
+
+    private static final class ExceptionHandler implements UncaughtExceptionHandler {
+
+        @Override
+        public void uncaughtException(Thread t, Throwable e) {
+            LOGGER.error("Uncaught exception", e);
         }
     }
 }
