@@ -46,7 +46,7 @@ public class Launcher {
 
     private static final String BASE_URL = "https://static.alterorb.net/launcher/v3/";
     private static final String CONFIG_URL = BASE_URL + "config.json";
-    private static final Semver VERSION = new Semver("3.1.0");
+    private static final Semver VERSION = new Semver("3.1.1");
 
     private static final Random RANDOM = new Random();
     private static final ExecutorService EXECUTOR_SERVICE = Executors.newSingleThreadExecutor(runnable -> {
