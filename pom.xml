@@ -26,7 +26,7 @@
         <dependency>
             <groupId>com.vdurmont</groupId>
             <artifactId>semver4j</artifactId>
-            <version>3.1.0</version>
+            <version>${semver.version}</version>
         </dependency>
         <dependency>
             <groupId>net.sf.jopt-simple</groupId>
