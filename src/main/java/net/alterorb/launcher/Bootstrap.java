@@ -14,8 +14,12 @@ public class Bootstrap {
 
     public static void main(String[] args) {
         LOGGER.info("Bootstrapping the launcher...");
-        UIConstants.loadResources();
         var localConfig = LaunchParams.from(args);
+
+        if (localConfig.scale() != null) {
+            System.setProperty("sun.java2d.uiScale", localConfig.scale());
+        }
+        UIConstants.loadResources();
         var launcher = Launcher.create(localConfig);
         var controller = LauncherController.instance();
 
