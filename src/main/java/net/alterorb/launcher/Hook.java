@@ -11,7 +11,7 @@ public final class Hook {
 
     public static File cacheRedirect(String directory, String file) {
         try {
-            var path = Storage.cacheFilePath(directory, file);
+            var path = LocalStorage.cacheFilePath(directory, file);
 
             if (!Files.exists(path)) {
                 Files.createDirectories(path.getParent());

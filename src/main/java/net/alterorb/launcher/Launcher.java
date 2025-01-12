@@ -1,17 +1,14 @@
 package net.alterorb.launcher;
 
-import com.google.gson.GsonBuilder;
 import com.vdurmont.semver4j.Semver;
 import com.vdurmont.semver4j.Semver.VersionDiff;
-import net.alterorb.launcher.alterorb.AlterOrbGame;
-import net.alterorb.launcher.alterorb.AlterOrbGame.AlterOrbGameAdapter;
-import net.alterorb.launcher.alterorb.RemoteConfig;
-import net.alterorb.launcher.alterorb.RemoteConfig.RemoteConfigAdapter;
+import net.alterorb.launcher.alterorb.GameManifest;
 import net.alterorb.launcher.applet.AlterOrbAppletContext;
 import net.alterorb.launcher.applet.AlterOrbAppletStub;
 import net.alterorb.launcher.event.EventDispatcher;
 import net.alterorb.launcher.event.ui.LaunchGameEvent;
 import net.alterorb.launcher.event.ui.ShutdownEvent;
+import net.alterorb.launcher.io.HashingVoidStream;
 import net.alterorb.launcher.ui.GameFrameController;
 import net.alterorb.launcher.ui.LauncherController;
 import net.alterorb.launcher.ui.UIConstants.Colors;
@@ -20,35 +17,23 @@ import org.slf4j.LoggerFactory;
 
 import java.applet.Applet;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.lang.Thread.UncaughtExceptionHandler;
-import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.file.Files;
-import java.time.Duration;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static java.nio.file.StandardOpenOption.CREATE;
-import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
-import static java.nio.file.StandardOpenOption.WRITE;
-
 public class Launcher {
 
+    public static final Semver VERSION = new Semver("4.0.0");
+
     private static final Logger LOGGER = LoggerFactory.getLogger(Launcher.class);
-
-    private static final String BASE_URL = "https://static.alterorb.net/launcher/v3/";
-    private static final String CONFIG_URL = BASE_URL + "config.json";
-    private static final Semver VERSION = new Semver("3.1.2");
-
     private static final Random RANDOM = new Random();
+
     private static final ExecutorService EXECUTOR_SERVICE = Executors.newSingleThreadExecutor(runnable -> {
         var thread = new Thread(runnable);
         thread.setName("ExecutorThread");
@@ -56,92 +41,63 @@ public class Launcher {
         return thread;
     });
 
-    private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
-                                                            .connectTimeout(Duration.ofSeconds(10))
-                                                            .build();
+    private final AlterOrbClient client = new AlterOrbClient();
+    private final LocalConfig localConfig;
 
-    private final LaunchParams launchParams;
-
-    private RemoteConfig remoteConfig;
     private Applet applet;
 
-    private Launcher(LaunchParams launchParams) {
-        this.launchParams = launchParams;
+    public Launcher(LocalConfig localConfig) {
+        this.localConfig = localConfig;
     }
 
-    public static Launcher create(LaunchParams launchParams) {
-        return new Launcher(launchParams);
-    }
-
-    public void initialize() throws IOException {
+    public void initialize() {
         LOGGER.info("Initializing AlterOrb Launcher V{}", VERSION);
-        Storage.initializeDirectories();
         EXECUTOR_SERVICE.execute(this::startup);
         EventDispatcher.register(LaunchGameEvent.class, this::onLaunchGame);
         EventDispatcher.register(ShutdownEvent.class, this::onShutdown);
     }
 
     private void onLaunchGame(LaunchGameEvent event) {
-        LOGGER.debug("Launching game {}", event.game().name());
-        LauncherController.instance().setProgressBarMessage("Launching the game...");
+        LOGGER.debug("Launching game {}", event.manifest().name());
+        var launcherController = LauncherController.instance();
+
+        launcherController.setProgressBarMessage("Launching the game...");
         try {
-            if (!validateGamepack(event.game())) {
-                downloadGamepack(event.game());
+            if (!validateGamepack(event.manifest())) {
+                launcherController.setProgressBarMessage("Downloading gamepack...");
+                client.downloadGamepack(event.manifest(), LocalStorage.gamepacksDirectory(), this::onDownloadProgressUpdate);
             }
-            EXECUTOR_SERVICE.execute(() -> launchApplet(event.game()));
+            EXECUTOR_SERVICE.execute(() -> launchApplet(event.manifest()));
         } catch (IOException | InterruptedException e) {
             LOGGER.error("Encountered an error while downloading the gamepack", e);
-            LauncherController.instance().setProgressBarMessage("There was an error while downloading the game", Colors.TEXT_ERROR);
+            launcherController.setProgressBarMessage("There was an error while downloading the game", Colors.TEXT_ERROR);
         }
+    }
+
+    private void onDownloadProgressUpdate(int percentage) {
+        LauncherController.instance().setProgressBarPercentage(percentage);
     }
 
     private void startup() {
         var controller = LauncherController.instance();
         try {
-            LOGGER.info("Fetching remote config...");
-            remoteConfig = fetchRemoteConfig();
-            LOGGER.debug("Latest version is {}", remoteConfig.version());
-            var diff = remoteConfig.version().diff(VERSION);
+            LOGGER.info("Checking for launcher updates...");
+            var remoteVersion = client.fetchVersion();
+            LOGGER.debug("Latest version is {}", remoteVersion);
+            var diff = remoteVersion.diff(VERSION);
 
             LOGGER.debug("Semver diff is {}", diff);
             if (diff == VersionDiff.PATCH || diff == VersionDiff.NONE) {
+                var manifest = client.fetchBranchManifest(localConfig.activeBranch());
                 controller.hideProgressBarAndText();
-                controller.updateAvailableGames(remoteConfig.games());
+                controller.updateAvailableGames(manifest.games());
             } else {
                 controller.setProgressBarMessage("Outdated launcher, download a new one at alterorb.net", Colors.TEXT_ERROR);
             }
-
-            if (launchParams.directLaunchGame() != null) {
-                remoteConfig.games()
-                            .stream()
-                            .filter(game -> game.internalName().equals(launchParams.directLaunchGame()))
-                            .findFirst()
-                            .ifPresent(game -> EventDispatcher.dispatch(new LaunchGameEvent(game)));
-            }
         } catch (IOException | InterruptedException e) {
-            LOGGER.error("Failed to load remote config", e);
+            LOGGER.error("Failed to fetch remote data", e);
             controller.setProgressBarMessage("There was an error while starting up the launcher", Colors.TEXT_ERROR);
         }
-    }
-
-    private RemoteConfig fetchRemoteConfig() throws IOException, InterruptedException {
-        var request = HttpRequest.newBuilder()
-                                 .GET()
-                                 .timeout(Duration.ofSeconds(20))
-                                 .uri(URI.create(CONFIG_URL))
-                                 .build();
-
-        var response = HTTP_CLIENT.send(request, BodyHandlers.ofInputStream());
-
-        if (response.statusCode() != 200) {
-            throw new IOException("Failed to fetch remote config, response code: " + response.statusCode());
-        }
-        var gson = new GsonBuilder()
-                .registerTypeAdapter(RemoteConfig.class, new RemoteConfigAdapter())
-                .registerTypeAdapter(AlterOrbGame.class, new AlterOrbGameAdapter())
-                .create();
-
-        return gson.fromJson(new InputStreamReader(response.body()), RemoteConfig.class);
     }
 
     public void onShutdown(ShutdownEvent event) {
@@ -157,12 +113,12 @@ public class Launcher {
         LOGGER.debug("Finished shutting down the launcher");
     }
 
-    private boolean validateGamepack(AlterOrbGame game) throws IOException {
-        LOGGER.info("Validating the gamepack for game={}", game.internalName());
-        var gamepackPath = Storage.gamepackPath(game);
+    private boolean validateGamepack(GameManifest manifest) throws IOException {
+        LOGGER.info("Validating the gamepack for game={}", manifest.name());
+        var gamepackPath = LocalStorage.gamepackPath(manifest);
 
         if (!Files.exists(gamepackPath)) {
-            LOGGER.debug("Gamepack does not exist, game={}", game.internalName());
+            LOGGER.debug("Gamepack does not exist, game={}", manifest.name());
             return false;
         }
 
@@ -170,55 +126,38 @@ public class Launcher {
             stream.consume();
 
             var localSha256 = stream.hash();
-            var expectedSha256 = game.gamepackHash();
+            var expectedSha256 = manifest.gamepackHash();
 
             LOGGER.debug("Gamepack hash, local={}, expected={}", localSha256, expectedSha256);
 
             if (!Objects.equals(localSha256, expectedSha256)) {
-                LOGGER.debug("Gamepack hash miss match, game={}", game.internalName());
+                LOGGER.debug("Gamepack hash miss match, game={}", manifest.name());
                 return false;
             }
         }
         return true;
     }
 
-    private void downloadGamepack(AlterOrbGame game) throws IOException, InterruptedException {
-        var uri = URI.create(Launcher.BASE_URL + "jars/" + game.internalName() + ".jar");
-        LOGGER.info("Downloading gamepack from {}", uri);
-        var httpRequest = HttpRequest.newBuilder()
-                                     .GET()
-                                     .timeout(Duration.ofSeconds(30))
-                                     .uri(uri)
-                                     .build();
-
-        LauncherController.instance().setProgressBarMessage("Downloading gamepack...");
-
-        var gamepackPath = Storage.gamepackPath(game);
-        var response = HTTP_CLIENT.send(httpRequest, BodyHandlers.ofFile(gamepackPath, CREATE, WRITE, TRUNCATE_EXISTING));
-
-        if (response.statusCode() != 200) {
-            throw new IOException("Failed to download gamepack");
-        }
-    }
-
-    private void launchApplet(AlterOrbGame game) {
-        LOGGER.debug("Launching game={}", game.internalName());
-        var gamepackFile = Storage.gamepackPath(game.internalName());
+    private void launchApplet(GameManifest manifest) {
+        LOGGER.debug("Launching game={}", manifest.name());
+        var gamepackFile = LocalStorage.gamepackPath(manifest);
 
         try {
-            URLClassLoader classLoader = new URLClassLoader(new URL[] {gamepackFile.toUri().toURL()}, Hook.class.getClassLoader());
-            var mainClass = classLoader.loadClass(game.mainClass());
+            var classLoader = new URLClassLoader(new URL[] {gamepackFile.toUri().toURL()}, Hook.class.getClassLoader());
+            var mainClass = classLoader.loadClass(manifest.mainClass());
             applet = (Applet) mainClass.getConstructor().newInstance();
 
-            Map<String, String> params = Map.of(
+            var appletParams = Map.of(
                     "instanceid", Long.toString(RANDOM.nextLong()),
-                    "gamecrc", Integer.toString(game.gamecrc())
+                    "gamecrc", Integer.toString(manifest.gamecrc()),
+                    "gameport1", Integer.toString(manifest.serverPort()),
+                    "gameport2", Integer.toString(manifest.serverPort())
             );
 
-            var documentBase = launchParams.documentBase() != null ? launchParams.documentBase() : remoteConfig.server();
-            var codeBase = launchParams.codeBase() != null ? launchParams.codeBase() : remoteConfig.server();
+            var documentBase = manifest.serverHost();
+            var codeBase = manifest.serverHost();
 
-            var alterorbAppletStub = AlterOrbAppletStub.from(new AlterOrbAppletContext(), params, documentBase, codeBase);
+            var alterorbAppletStub = AlterOrbAppletStub.from(new AlterOrbAppletContext(), appletParams, documentBase, codeBase);
             applet.setStub(alterorbAppletStub);
 
             LOGGER.debug("Initializing the applet...");

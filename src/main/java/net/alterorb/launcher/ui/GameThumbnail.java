@@ -1,12 +1,10 @@
 package net.alterorb.launcher.ui;
 
-import net.alterorb.launcher.alterorb.AlterOrbGame;
+import net.alterorb.launcher.AssetLoader;
+import net.alterorb.launcher.alterorb.GameManifest;
 import net.alterorb.launcher.ui.UIConstants.Colors;
 import net.alterorb.launcher.ui.UIConstants.Fonts;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import javax.imageio.ImageIO;
 import javax.swing.JComponent;
 import java.awt.Color;
 import java.awt.Cursor;
@@ -18,38 +16,31 @@ import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
 
 public class GameThumbnail extends JComponent {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(GameThumbnail.class);
 
     private static final RenderingHints ANTI_ALIAS_HINT = new RenderingHints(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
     private static final int MAX_GAME_TITLE_WIDTH = 95;
     private static final int MINIMUM_WIDTH = 105;
     private static final int MINIMUM_HEIGHT = 115;
 
-    private final AlterOrbGame game;
+    private final GameManifest manifest;
+    private final BufferedImage thumbnail;
 
     private boolean selected;
     private boolean hovered;
-    private BufferedImage thumbnail;
 
-    public AlterOrbGame game() {
-        return game;
+    public GameManifest manifest() {
+        return manifest;
     }
 
     public boolean isSelected() {
         return selected;
     }
 
-    public GameThumbnail(AlterOrbGame game) {
-        this.game = game;
-        try {
-            thumbnail = ImageIO.read(GameThumbnail.class.getResource("/thumbnails/" + game.internalName() + ".jpg"));
-        } catch (IOException | IllegalArgumentException e) {
-            LOGGER.error("Failed to load game thumbnail", e);
-        }
+    public GameThumbnail(GameManifest manifest) {
+        this.manifest = manifest;
+        thumbnail = AssetLoader.getThumbnail(manifest.thumbnail());
         setPreferredSize(new Dimension(MINIMUM_WIDTH, MINIMUM_HEIGHT));
         addMouseListener(new MouseHoverListener());
     }
@@ -77,7 +68,7 @@ public class GameThumbnail extends JComponent {
 
         g.setFont(Fonts.OPEN_SANS_13);
         g.setColor(Colors.TEXT_DEFAULT);
-        drawGameTitle(g, game.name());
+        drawGameTitle(g, manifest.name());
     }
 
     private void drawGameTitle(Graphics g, String title) {

@@ -1,4 +1,4 @@
-package net.alterorb.launcher;
+package net.alterorb.launcher.io;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;

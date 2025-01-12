@@ -14,8 +14,6 @@ public class AlterOrbAppletStub implements AppletStub {
             "overxgames", "45",
             "overxachievements", "1000",
             "member", "no",
-            "gameport1", "43594",
-            "gameport2", "43594",
             "servernum", "8003"
     );
 
@@ -31,10 +29,10 @@ public class AlterOrbAppletStub implements AppletStub {
         this.codeBase = codeBase;
     }
 
-    public static AlterOrbAppletStub from(AlterOrbAppletContext context, Map<String, String> params, String documentBase, String codeBase) throws MalformedURLException {
+    public static AlterOrbAppletStub from(AlterOrbAppletContext context, Map<String, String> appletParams, String documentBase, String codeBase) throws MalformedURLException {
         Map<String, String> parameters = new HashMap<>();
         parameters.putAll(STATIC_PARAMS);
-        parameters.putAll(params);
+        parameters.putAll(appletParams);
 
         var documentBaseUrl = URI.create(documentBase).toURL();
         var codeBaseUrl = URI.create(codeBase).toURL();

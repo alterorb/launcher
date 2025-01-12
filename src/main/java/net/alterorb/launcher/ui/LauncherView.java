@@ -1,6 +1,6 @@
 package net.alterorb.launcher.ui;
 
-import net.alterorb.launcher.alterorb.AlterOrbGame;
+import net.alterorb.launcher.alterorb.GameManifest;
 import net.alterorb.launcher.event.EventDispatcher;
 import net.alterorb.launcher.event.ui.GameSelectedEvent;
 import net.alterorb.launcher.ui.UIConstants.Colors;
@@ -135,11 +135,11 @@ public class LauncherView extends JFrame {
         });
     }
 
-    void updateGameList(List<AlterOrbGame> games) {
+    void updateGameList(GameManifest[] games) {
         SwingUtilities.invokeLater(() -> {
             gameListContainer.remove(placeholderText);
             gameListContainer.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 10));
-            gameThumbnails = new ArrayList<>(games.size());
+            gameThumbnails = new ArrayList<>(games.length);
 
             for (var game : games) {
                 GameThumbnail gameThumbnail = new GameThumbnail(game);
@@ -147,7 +147,7 @@ public class LauncherView extends JFrame {
                 gameListContainer.add(gameThumbnail);
                 gameThumbnails.add(gameThumbnail);
             }
-            gameListContainer.setPreferredSize(new Dimension(GAME_LIST_CONTAINER_WIDTH, 115 * (games.size() / 3)));
+            gameListContainer.setPreferredSize(new Dimension(GAME_LIST_CONTAINER_WIDTH, 115 * (games.length / 3)));
             gameListContainer.revalidate();
             gameListContainer.repaint();
         });
@@ -168,7 +168,7 @@ public class LauncherView extends JFrame {
             gameThumbnail.selected(selected);
 
             if (selected) {
-                EventDispatcher.dispatch(new GameSelectedEvent(gameThumbnail.game()));
+                EventDispatcher.dispatch(new GameSelectedEvent(gameThumbnail.manifest()));
                 for (GameThumbnail thumbnail : gameThumbnails) {
 
                     if (thumbnail != gameThumbnail) {
