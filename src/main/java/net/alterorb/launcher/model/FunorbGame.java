@@ -1,4 +1,4 @@
-package net.alterorb.launcher.alterorb;
+package net.alterorb.launcher.model;
 
 public enum FunorbGame {
 

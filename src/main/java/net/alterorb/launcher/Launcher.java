@@ -2,7 +2,7 @@ package net.alterorb.launcher;
 
 import com.vdurmont.semver4j.Semver;
 import com.vdurmont.semver4j.Semver.VersionDiff;
-import net.alterorb.launcher.alterorb.GameManifest;
+import net.alterorb.launcher.model.GameManifest;
 import net.alterorb.launcher.applet.AlterOrbAppletContext;
 import net.alterorb.launcher.applet.AlterOrbAppletStub;
 import net.alterorb.launcher.event.EventDispatcher;
@@ -166,7 +166,7 @@ public class Launcher {
             LOGGER.debug("Applet initialized, displaying the game view...");
             LauncherController.instance().dispose();
             GameFrameController.instance().addApplet(applet);
-            GameFrameController.instance().display();
+            GameFrameController.instance().display(manifest.allowResizing());
             LOGGER.debug("Finished launching the game");
         } catch (Exception e) {
             LOGGER.error("Encountered an error while launching the applet", e);

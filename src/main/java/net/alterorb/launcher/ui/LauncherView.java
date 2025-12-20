@@ -1,6 +1,6 @@
 package net.alterorb.launcher.ui;
 
-import net.alterorb.launcher.alterorb.GameManifest;
+import net.alterorb.launcher.model.GameManifest;
 import net.alterorb.launcher.event.EventDispatcher;
 import net.alterorb.launcher.event.ui.GameSelectedEvent;
 import net.alterorb.launcher.ui.UIConstants.Colors;

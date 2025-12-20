@@ -31,7 +31,7 @@ public class AssetLoader {
                       });
             }
         } catch (IOException e) {
-            LOGGER.error("", e);
+            LOGGER.error("Failed to load assets", e);
         }
     }
 

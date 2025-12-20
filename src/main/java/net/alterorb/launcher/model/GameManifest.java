@@ -1,4 +1,4 @@
-package net.alterorb.launcher.alterorb;
+package net.alterorb.launcher.model;
 
 public record GameManifest(
         String name,
@@ -8,7 +8,8 @@ public record GameManifest(
         String gamepackHash,
         int gamecrc,
         String serverHost,
-        int serverPort
+        int serverPort,
+        boolean allowResizing
 ) {
 
 }

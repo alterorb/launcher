@@ -6,14 +6,12 @@ import java.awt.Dimension;
 
 public class GameFrameView extends JFrame {
 
-    private static final Dimension MINIMUM_SIZE = new Dimension(640 + 16, 480 + 39);
+    public static final Dimension APPLET_MIN_SIZE = new Dimension(640, 480);
+    public static final Dimension APPLET_MAX_SIZE = new Dimension(1024, 1024);
 
     GameFrameView(GameFrameController gameFrameController) {
         setTitle("AlterOrb");
-        setMinimumSize(MINIMUM_SIZE);
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         addWindowListener(gameFrameController);
-        setLocationRelativeTo(null);
-        setResizable(true);
     }
 }

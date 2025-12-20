@@ -2,13 +2,12 @@ package net.alterorb.launcher;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import net.alterorb.launcher.alterorb.GameManifest;
+import net.alterorb.launcher.model.GameManifest;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.WRITE;
@@ -70,10 +69,6 @@ public final class LocalStorage {
     }
 
     public static Path gamepackPath(GameManifest manifest) {
-        return gamepackPath(manifest.gamepack());
-    }
-
-    private static Path gamepackPath(String jarName) {
-        return GAMEPACKS_DIRECTORY.resolve(jarName + ".jar");
+        return GAMEPACKS_DIRECTORY.resolve(manifest.gamepack());
     }
 }

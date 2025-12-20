@@ -2,8 +2,8 @@ package net.alterorb.launcher;
 
 import com.google.gson.Gson;
 import com.vdurmont.semver4j.Semver;
-import net.alterorb.launcher.alterorb.BranchManifest;
-import net.alterorb.launcher.alterorb.GameManifest;
+import net.alterorb.launcher.model.BranchManifest;
+import net.alterorb.launcher.model.GameManifest;
 
 import java.io.IOException;
 import java.net.URI;
@@ -15,6 +15,8 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.function.IntConsumer;
 
+import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.nio.file.StandardOpenOption.WRITE;
@@ -59,7 +61,7 @@ public class AlterOrbClient {
     }
 
     public void downloadGamepack(GameManifest manifest, Path directory, IntConsumer progressListener) throws IOException, InterruptedException {
-        var uri = BASE_URL.resolve("gamepacks").resolve(manifest.gamepack());
+        var uri = BASE_URL.resolve("gamepacks/").resolve(manifest.gamepack());
         var request = HttpRequest.newBuilder(uri)
                                  .header("User-Agent", "AlterOrb " + Launcher.VERSION)
                                  .build();
@@ -75,23 +77,35 @@ public class AlterOrbClient {
                                      .map(Long::parseLong)
                                      .orElse(-1L);
 
-        var buffer = new byte[4096];
+        var buffer = new byte[0x4000];
+        var lastPercent = 0;
         var bytesRead = 0;
         long totalBytes = 0;
 
         var gamepackPath = directory.resolve(manifest.gamepack());
+        var gamepackPathTemp = directory.resolve(manifest.gamepack() + ".temp");
 
         try (var stream = response.body();
-                var outputStream = Files.newOutputStream(gamepackPath, CREATE, WRITE, TRUNCATE_EXISTING)) {
+                var outputStream = Files.newOutputStream(gamepackPathTemp, CREATE, WRITE, TRUNCATE_EXISTING)) {
             while ((bytesRead = stream.read(buffer)) != -1) {
                 outputStream.write(buffer, 0, bytesRead);
                 totalBytes += bytesRead;
 
-                if (contentLength != -1) {
-                    var progress = totalBytes * 100 / contentLength;
-                    progressListener.accept((int) progress);
+                if (contentLength <= 0) {
+                    continue;
+                }
+                var progress = (int) (totalBytes * 100 / contentLength);
+
+                if (lastPercent != progress) {
+                    progressListener.accept(progress);
+                    lastPercent = progress;
                 }
             }
+        } catch (IOException e) {
+            Files.deleteIfExists(gamepackPathTemp);
+            throw e;
         }
+
+        Files.move(gamepackPathTemp, gamepackPath, REPLACE_EXISTING, ATOMIC_MOVE);
     }
 }

@@ -1,7 +1,7 @@
 package net.alterorb.launcher.ui;
 
 import net.alterorb.launcher.AssetLoader;
-import net.alterorb.launcher.alterorb.GameManifest;
+import net.alterorb.launcher.model.GameManifest;
 import net.alterorb.launcher.ui.UIConstants.Colors;
 import net.alterorb.launcher.ui.UIConstants.Fonts;
 
@@ -76,38 +76,43 @@ public class GameThumbnail extends JComponent {
         int titleWidth = fontMetrics.stringWidth(title);
 
         if (titleWidth > MAX_GAME_TITLE_WIDTH) {
-            String[] words = title.split(" ");
-            int currentWord = 0;
-            StringBuilder lineBuffer = new StringBuilder();
-            int lineWidth = 0;
-
-            int y = 90;
-            while (true) {
-
-                if (currentWord >= words.length) {
-                    String line = lineBuffer.toString();
-
-                    g.drawString(line, getWidth() / 2 - fontMetrics.stringWidth(line) / 2, y);
-                    break;
-                }
-                String nextWord = words[currentWord];
-                int wordWidth = fontMetrics.stringWidth(nextWord);
-
-                if (lineWidth + wordWidth > MAX_GAME_TITLE_WIDTH) {
-                    String line = lineBuffer.toString();
-
-                    g.drawString(line, getWidth() / 2 - fontMetrics.stringWidth(line) / 2, y);
-                    lineBuffer = new StringBuilder();
-                    lineWidth = 0;
-                    y += fontMetrics.getHeight();
-                } else {
-                    lineBuffer.append(nextWord).append(' ');
-                    lineWidth += wordWidth;
-                    currentWord++;
-                }
-            }
+            drawGameTitleWrapped(g, title);
         } else {
             g.drawString(title, getWidth() / 2 - titleWidth / 2, 100);
+        }
+    }
+
+    private void drawGameTitleWrapped(Graphics g, String title) {
+        var fontMetrics = g.getFontMetrics();
+        var words = title.split(" ");
+        var lineBuffer = new StringBuilder();
+
+        int currentWord = 0;
+        int lineWidth = 0;
+
+        int y = 90;
+        while (true) {
+            if (currentWord >= words.length) {
+                String line = lineBuffer.toString();
+
+                g.drawString(line, getWidth() / 2 - fontMetrics.stringWidth(line) / 2, y);
+                break;
+            }
+            String nextWord = words[currentWord];
+            int wordWidth = fontMetrics.stringWidth(nextWord);
+
+            if (lineWidth + wordWidth > MAX_GAME_TITLE_WIDTH) {
+                String line = lineBuffer.toString();
+
+                g.drawString(line, getWidth() / 2 - fontMetrics.stringWidth(line) / 2, y);
+                lineBuffer = new StringBuilder();
+                lineWidth = 0;
+                y += fontMetrics.getHeight();
+            } else {
+                lineBuffer.append(nextWord).append(' ');
+                lineWidth += wordWidth;
+                currentWord++;
+            }
         }
     }
 
