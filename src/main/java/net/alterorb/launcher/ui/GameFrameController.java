@@ -46,6 +46,7 @@ public final class GameFrameController extends WindowAdapter {
     public void addApplet(Applet applet) {
         applet.setMinimumSize(GameFrameView.APPLET_MIN_SIZE);
         applet.setPreferredSize(GameFrameView.APPLET_MIN_SIZE);
+        applet.setMaximumSize(GameFrameView.APPLET_MAX_SIZE);
         gameFrameView.add(applet);
         gameFrameView.pack();
     }
